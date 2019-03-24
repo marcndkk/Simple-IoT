@@ -1,0 +1,136 @@
+grammar dk.sdu.mmmi.mdsd.iot_dsl.IoTDSL with org.eclipse.xtext.common.Terminals
+
+generate ioTDSL "http://www.sdu.dk/mmmi/mdsd/iot_dsl/IoTDSL"
+
+System:
+	server=Server boards+=Board+ logic+=Logic+ //expose+=Expose*
+;
+
+Server:
+	'server' '{' ip=IP port=Port '}'
+;
+
+IP:
+	'ip' '=' INT '.' INT '.' INT '.' INT
+;
+
+Port:
+	'port' '=' INT
+;
+
+Board:
+	'board' name=ID '{' components+=Component+ '}'
+;
+
+Component:
+	WiFi | Sensor | Actuator
+;
+
+WiFi:
+	'wifi' '(' 'ssid' '=' ssid=STRING ',' 'pass' '=' pass=STRING ')'
+;
+
+Sensor:
+	type=SensorType pinConf=PinConfiguration?
+;
+
+SensorType:
+	'lightsensor' | 'thermometer' | 'hygrometer' | 'barometer' | 'accelerometer'
+;
+
+PinConfiguration:
+	{PinConfiguration} '(' pins+=Pin? (',' pins+=Pin)* ')'
+;
+
+Pin:
+	'P'INT
+;
+
+Actuator:
+	type=ActuatorType pinConf=PinConfiguration?
+;
+
+ActuatorType:
+	'rgbled' | 'led'
+;
+
+Logic:
+	Loop | Statement
+;
+
+Loop:
+	'every' time=INT timeunit=TimeUnit 'do' '{' statements+=Statement+ '}'
+;
+
+TimeUnit:
+	'hours' | 'minutes' | 'seconds'
+;
+
+Statement:
+	(Variable | If | Assignment | Expose) ';'
+;
+
+Variable:
+	'var' name=ID '=' exp=Expression
+;
+
+Expression:
+	Reference | Number | Text | Average | Percentage
+;
+
+Percentage:
+	value=INT '%'
+;
+
+Reference:
+	ref=[Variable] | LibraryReference
+;
+
+LibraryReference:
+	{LibraryReference} (board=[Board] | '*') '.' (type=SensorType | type=ActuatorType) '.' library=ID
+;
+
+Number:
+	value=INT
+;
+
+Text:
+	value=STRING
+;
+
+Average:
+	'average' '(' Reference ')'
+;
+
+If:
+	'if' condition=Condition 'then' statements+=Statement+ elseifs+=ElseIf* else=Else?
+;
+
+Condition:
+	Expression | Comparison
+;
+
+Comparison:
+	left=Expression COp right=Expression
+;
+
+COp:
+	'<' | '>' | '<=' | '>=' | '==' | '!='
+;
+
+ElseIf:
+	'elseif' condition=Condition 'then' statements+=Statement+
+;
+
+Else:
+	'else' statements+=Statement+
+;
+
+Assignment:
+	ref=Reference '=' exp=Expression
+;
+
+
+Expose:
+	'expose' name=ID '{' statements+=Statement+ '}'
+;

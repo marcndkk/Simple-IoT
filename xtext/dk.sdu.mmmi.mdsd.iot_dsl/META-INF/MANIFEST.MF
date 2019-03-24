@@ -1,0 +1,30 @@
+Manifest-Version: 1.0
+Automatic-Module-Name: dk.sdu.mmmi.mdsd.iot_dsl
+Bundle-ManifestVersion: 2
+Bundle-Name: dk.sdu.mmmi.mdsd.iot_dsl
+Bundle-Vendor: My Company
+Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: dk.sdu.mmmi.mdsd.iot_dsl; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.xtext,
+ org.eclipse.xtext.xbase,
+ org.eclipse.equinox.common;bundle-version="3.5.0",
+ org.eclipse.emf.ecore,
+ org.eclipse.xtext.xbase.lib;bundle-version="2.14.0",
+ org.eclipse.xtext.util,
+ org.eclipse.emf.common,
+ org.eclipse.xtend.lib;bundle-version="2.14.0",
+ org.antlr.runtime;bundle-version="[3.2.0,3.2.1)"
+Bundle-RequiredExecutionEnvironment: JavaSE-10
+Export-Package: dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.util,
+ dk.sdu.mmmi.mdsd.iot_dsl.validation,
+ dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr.internal,
+ dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr,
+ dk.sdu.mmmi.mdsd.iot_dsl,
+ dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL,
+ dk.sdu.mmmi.mdsd.iot_dsl.services,
+ dk.sdu.mmmi.mdsd.iot_dsl.scoping,
+ dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.impl,
+ dk.sdu.mmmi.mdsd.iot_dsl.serializer,
+ dk.sdu.mmmi.mdsd.iot_dsl.generator
+Import-Package: org.apache.log4j
