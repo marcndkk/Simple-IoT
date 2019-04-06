@@ -12,4 +12,5 @@ Require-Bundle: dk.sdu.mmmi.mdsd.iot_dsl,
  org.antlr.runtime;bundle-version="[3.2.0,3.2.1)"
 Bundle-RequiredExecutionEnvironment: JavaSE-10
 Export-Package: dk.sdu.mmmi.mdsd.iot_dsl.ide.contentassist.antlr,
- dk.sdu.mmmi.mdsd.iot_dsl.ide.contentassist.antlr.internal
+ dk.sdu.mmmi.mdsd.iot_dsl.ide.contentassist.antlr.internal,
+ dk.sdu.mmmi.mdsd.iot_dsl.ide.contentassist.antlr.lexer

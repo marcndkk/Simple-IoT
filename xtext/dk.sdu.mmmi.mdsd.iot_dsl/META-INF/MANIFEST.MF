@@ -26,5 +26,6 @@ Export-Package: dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.util,
  dk.sdu.mmmi.mdsd.iot_dsl.scoping,
  dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.impl,
  dk.sdu.mmmi.mdsd.iot_dsl.serializer,
- dk.sdu.mmmi.mdsd.iot_dsl.generator
+ dk.sdu.mmmi.mdsd.iot_dsl.generator,
+ dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr.lexer
 Import-Package: org.apache.log4j

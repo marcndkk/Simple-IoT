@@ -7,7 +7,7 @@ System:
 ;
 
 Server:
-	'server' '{' ip=IP port=Port '}'
+	'server' BEGIN ip=IP port=Port END
 ;
 
 IP:
@@ -19,7 +19,10 @@ Port:
 ;
 
 Board:
-	'board' name=ID '{' components+=Component+ '}'
+	'board' name=ID
+	BEGIN
+		components+=Component+
+	END
 ;
 
 Component:
@@ -59,7 +62,7 @@ Logic:
 ;
 
 Loop:
-	'every' time=INT timeunit=TimeUnit 'do' '{' statements+=Statement+ '}'
+	'every' time=INT timeunit=TimeUnit 'do' BEGIN statements+=Statement+ END
 ;
 
 TimeUnit:
@@ -67,7 +70,7 @@ TimeUnit:
 ;
 
 Statement:
-	(Variable | If | Assignment | Expose) ';'
+	((Variable | Assignment) ";") | If | Expose
 ;
 
 Variable:
@@ -103,7 +106,7 @@ Average:
 ;
 
 If:
-	'if' condition=Condition 'then' statements+=Statement+ elseifs+=ElseIf* else=Else?
+	'if' condition=Condition 'then' BEGIN statements+=Statement+  END elseifs+=ElseIf* else=Else?
 ;
 
 Condition:
@@ -119,11 +122,11 @@ COp:
 ;
 
 ElseIf:
-	'elseif' condition=Condition 'then' statements+=Statement+
+	'elseif' condition=Condition 'then' BEGIN statements+=Statement+ END
 ;
 
 Else:
-	'else' statements+=Statement+
+	'else' BEGIN statements+=Statement+ END
 ;
 
 Assignment:
@@ -132,5 +135,8 @@ Assignment:
 
 
 Expose:
-	'expose' name=ID '{' statements+=Statement+ '}'
+	'expose' name=ID BEGIN statements+=Statement+ END
 ;
+
+terminal BEGIN: 'synthetic:BEGIN';
+terminal END: 'synthetic:END';
