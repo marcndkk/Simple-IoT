@@ -1,0 +1,36 @@
+sensortype pycom_lightsensor:
+	external init_lightsensor()
+	property lightlevel
+sensortype thermometer:
+	external init_thermometer(pin_in, pin_out, gnd)
+	property temp
+actuatortype led:
+	external init_led()
+	property intensity
+	property status
+server:
+	ip=192.168.0.1
+	port=1234
+board b1:
+	wifi(ssid="MyWifi", pass="12345")
+	lightsensor pycom_lightsensor()
+	led led()
+board b2:
+	wifi(ssid="MyOtherWifi", pass="54321")
+	thermometer thermometer(16, 4, 7)
+	lightsensor pycom_lightsensor()
+	led led()
+every 1 minutes do
+	var light_level = average(*.lightsensor.lightlevel)
+	if light_level > 500 then
+		*.led.intensity = 0%
+	elseif light_level > 250 then
+		*.led.intensity = 50%
+	else
+		*.led.intensity = 100%
+		b1.led.intensity = 50%
+expose turn_on
+	*.led.status = "ON"
+	*.led.status = "ON"
+expose turn_off
+	*.led.status = "OFF"
