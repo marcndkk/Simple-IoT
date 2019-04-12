@@ -17,18 +17,18 @@ board b1:
 	led led()
 board b2:
 	wifi(ssid="MyOtherWifi", pass="54321")
-	thermometer thermometer(16, 4, 7)
+	thermometer thermometer(16, 7, 4)
 	lightsensor pycom_lightsensor()
 	led led()
 every 1 minutes do
-	var light_level = average(*.lightsensor.lightlevel)
+	var light_level = average(*.pycom_lightsensor.lightlevel)
 	if light_level > 500 then
 		*.led.intensity = 0%
 	elseif light_level > 250 then
 		*.led.intensity = 50%
 	else
 		*.led.intensity = 100%
-		b1.led.intensity = 50%
+		b1.led.intensity = 50% 
 expose turn_on
 	*.led.status = "ON"
 	*.led.status = "ON"
