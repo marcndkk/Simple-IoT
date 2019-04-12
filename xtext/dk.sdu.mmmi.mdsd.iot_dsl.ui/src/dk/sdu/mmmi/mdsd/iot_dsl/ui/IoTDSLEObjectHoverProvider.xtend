@@ -18,11 +18,11 @@ class IoTDSLEObjectHoverProvider extends DefaultEObjectHoverProvider{
 			return	'''
 					<p>
 					«IF o instanceof ActuatorType»
-					<b>ActuatorType</b> 
+					ActuatorType
 					«ELSE»
-					<b>SensorType</b> 
+					SensorType
 					«ENDIF»
-					«(o as ComponentType).name»
+					<b>«(o as ComponentType).name»</b>
 					«FOR b : o.getContainerOfType(System).boards»
 					«b.getComponentsOfType(o as ComponentType)»
 					«ENDFOR»
