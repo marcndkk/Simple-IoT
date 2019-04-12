@@ -90,7 +90,7 @@ Reference:
 ;
 
 PropertyUse:
-	(board=[Board] | '*') '.' component=[Component] '.' property=[Property]
+	((board=[Board] '.' component=[Component])| ('*' '.' componenttype=[ComponentType])) '.' property=[Property]
 ;
 
 Number:

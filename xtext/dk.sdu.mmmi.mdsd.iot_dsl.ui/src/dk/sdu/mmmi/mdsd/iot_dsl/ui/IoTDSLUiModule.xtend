@@ -4,10 +4,15 @@
 package dk.sdu.mmmi.mdsd.iot_dsl.ui
 
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider
 
 /**
  * Use this class to register components to be used within the Eclipse IDE.
  */
 @FinalFieldsConstructor
 class IoTDSLUiModule extends AbstractIoTDSLUiModule {
+	def Class<? extends IEObjectHoverProvider> bindIEObjectHoverProvider() {
+		return IoTDSLEObjectHoverProvider
+	}
+
 }
