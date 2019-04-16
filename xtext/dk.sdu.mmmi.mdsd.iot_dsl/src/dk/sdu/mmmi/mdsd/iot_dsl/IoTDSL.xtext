@@ -23,15 +23,15 @@ Parameter:
 ;
 
 Server:
-	'server' ':' BEGIN ip=IP port=Port END
+	'server' ':' BEGIN 'host' '=' host=Host 'port' '=' port=INT END
+;
+
+Host:
+	STRING | IP
 ;
 
 IP:
-	'ip' '=' INT '.' INT '.' INT '.' INT
-;
-
-Port:
-	'port' '=' INT
+	INT '.' INT '.' INT '.' INT
 ;
 
 Board:

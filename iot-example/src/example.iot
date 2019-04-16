@@ -9,7 +9,7 @@ actuatortype led:
 	property intensity
 	property status
 server:
-	ip=192.168.0.1
+	host=192.168.0.1
 	port=1234
 board b1:
 	wifi(ssid="MyWifi", pass="12345")
