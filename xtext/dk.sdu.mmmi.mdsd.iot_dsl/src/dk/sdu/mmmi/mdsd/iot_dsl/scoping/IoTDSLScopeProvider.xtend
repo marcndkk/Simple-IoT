@@ -3,6 +3,15 @@
  */
 package dk.sdu.mmmi.mdsd.iot_dsl.scoping
 
+import org.eclipse.emf.ecore.EObject
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.IoTDSLPackage.Literals
+import org.eclipse.emf.ecore.EReference
+import static extension org.eclipse.xtext.EcoreUtil2.*
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
+import org.eclipse.xtext.scoping.Scopes
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
+
 
 /**
  * This class contains custom scoping description.
@@ -11,5 +20,32 @@ package dk.sdu.mmmi.mdsd.iot_dsl.scoping
  * on how and when to use it.
  */
 class IoTDSLScopeProvider extends AbstractIoTDSLScopeProvider {
-
+	override getScope(EObject context, EReference reference) {
+		if (reference == Literals.PROPERTY_USE__COMPONENT) {
+			val propertyUse = context.getContainerOfType(PropertyUse)
+			return Scopes.scopeFor(propertyUse?.board?.elements.filter(Component))
+			
+		} else if (reference == Literals.PROPERTY_USE__PROPERTY) {
+			var componenttype = context.getContainerOfType(PropertyUse)?.component?.type
+			if(componenttype !== null) {
+				return Scopes.scopeFor(componenttype.properties)
+			}
+			componenttype = context.getContainerOfType(PropertyUse)?.componenttype
+			if(componenttype !== null) {
+				return Scopes.scopeFor(componenttype.properties)
+			}
+		} else if (reference == Literals.PROPERTY_USE__COMPONENTTYPE) {
+			var system = context.getContainerOfType(System)
+			return Scopes.scopeFor(system.componenttypes);
+		}
+		return super.getScope(context, reference)
+	}
+		
+	def getScopeForAllBoards(EObject context) {
+		
+		var system = context.getContainerOfType(System)
+		val candidates = newArrayList
+		system.boards.forEach[b| b.elements.filter(Component).forEach[c|candidates.add(c)]]
+		return Scopes.scopeFor(candidates)
+	}
 }

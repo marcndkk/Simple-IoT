@@ -3,58 +3,62 @@ grammar dk.sdu.mmmi.mdsd.iot_dsl.IoTDSL with org.eclipse.xtext.common.Terminals
 generate ioTDSL "http://www.sdu.dk/mmmi/mdsd/iot_dsl/IoTDSL"
 
 System:
-	server=Server boards+=Board+ logic+=Logic+ //expose+=Expose*
+	mqtt=Mqtt componenttypes+=ComponentType* server=Server boards+=Board+ logic+=Logic+ expose+=Expose*
+;
+
+Mqtt:
+	'mqtt' '(' 'host' '=' host=(STRING | IP) ',' 'user' '=' user=STRING ',' 'pass' '=' pass=STRING ',' 'port' '=' port=INT ')'
+;
+
+ComponentType:
+	({SensorType} 'sensortype' | {ActuatorType} 'actuatortype') name=ID ":" BEGIN external=External? properties+=Property* END
+;
+
+Property:
+	"property" name=ID
+;
+
+External:
+	"external" name=ID '(' parameters+=Parameter? (',' parameters+=Parameter)* ')'
+;
+
+Parameter:
+	name=ID
 ;
 
 Server:
-	'server' BEGIN ip=IP port=Port END
+	'server' ':' BEGIN 'host' '=' host=Host 'port' '=' port=INT END
+;
+
+Host:
+	STRING | IP
 ;
 
 IP:
-	'ip' '=' INT '.' INT '.' INT '.' INT
-;
-
-Port:
-	'port' '=' INT
+	INT '.' INT '.' INT '.' INT
 ;
 
 Board:
-	'board' name=ID
+	'board' name=ID ':'
 	BEGIN
-		components+=Component+
+		elements+=Element+
 	END
 ;
 
-Component:
-	WiFi | Sensor | Actuator
+Element:
+	WiFi | Component
 ;
 
 WiFi:
 	'wifi' '(' 'ssid' '=' ssid=STRING ',' 'pass' '=' pass=STRING ')'
 ;
 
-Sensor:
-	type=SensorType pinConf=PinConfiguration?
+Component:
+	name=ID type=[ComponentType] '(' args+=Argument? (',' args+=Argument)* ')'
 ;
 
-SensorType:
-	'lightsensor' | 'thermometer' | 'hygrometer' | 'barometer' | 'accelerometer'
-;
-
-PinConfiguration:
-	{PinConfiguration} '(' pins+=Pin? (',' pins+=Pin)* ')'
-;
-
-Pin:
-	'P'INT
-;
-
-Actuator:
-	type=ActuatorType pinConf=PinConfiguration?
-;
-
-ActuatorType:
-	'rgbled' | 'led'
+Argument:
+	STRING | INT
 ;
 
 Logic:
@@ -70,7 +74,7 @@ TimeUnit:
 ;
 
 Statement:
-	((Variable | Assignment) ";") | If | Expose
+	((Variable | Assignment) ";"?) | If
 ;
 
 Variable:
@@ -86,11 +90,11 @@ Percentage:
 ;
 
 Reference:
-	ref=[Variable] | LibraryReference
+	ref=[Variable] | PropertyUse
 ;
 
-LibraryReference:
-	{LibraryReference} (board=[Board] | '*') '.' (type=SensorType | type=ActuatorType) '.' library=ID
+PropertyUse:
+	((board=[Board] '.' component=[Component])| ('*' '.' componenttype=[ComponentType])) '.' property=[Property]
 ;
 
 Number:
