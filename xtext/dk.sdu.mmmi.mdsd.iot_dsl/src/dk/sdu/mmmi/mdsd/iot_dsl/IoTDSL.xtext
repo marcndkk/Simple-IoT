@@ -3,7 +3,11 @@ grammar dk.sdu.mmmi.mdsd.iot_dsl.IoTDSL with org.eclipse.xtext.common.Terminals
 generate ioTDSL "http://www.sdu.dk/mmmi/mdsd/iot_dsl/IoTDSL"
 
 System:
-	componenttypes+=ComponentType* server=Server boards+=Board+ logic+=Logic+ expose+=Expose*
+	mqtt=Mqtt componenttypes+=ComponentType* server=Server boards+=Board+ logic+=Logic+ expose+=Expose*
+;
+
+Mqtt:
+	'mqtt' '(' 'host' '=' host=(STRING | IP) ',' 'user' '=' user=STRING ',' 'pass' '=' pass=STRING ',' 'port' '=' port=INT ')'
 ;
 
 ComponentType:
