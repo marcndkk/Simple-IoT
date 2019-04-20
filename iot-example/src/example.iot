@@ -1,4 +1,4 @@
-mqtt(host="mqtt.mndkk.dk", user='test_user', pass="123", port=1883)
+mqtt(host="mndkk.dk", user='iot', pass="3Y5s6JrX", port=1883)
 sensortype pycom_lightsensor:
 	external init_lightsensor()
 	property lightlevel
@@ -18,7 +18,7 @@ board b1:
 	led led()
 board b2:
 	wifi(ssid="MyOtherWifi", pass="54321")
-	thermometer thermometer(16, 7, 4)
+	thermometer thermometer(16, 7, 4) 
 	lightsensor pycom_lightsensor()
 	led led()
 every 1 minutes do
@@ -29,9 +29,8 @@ every 1 minutes do
 		*.led.intensity = 50%
 	else
 		*.led.intensity = 100%
-		b1.led.intensity = 50% 
+		b1.led.intensity = 50%
 expose turn_on
-	*.led.status = "ON"
-	*.led.status = "ON"
+	*.led.status = "ON" 
 expose turn_off
 	*.led.status = "OFF"
