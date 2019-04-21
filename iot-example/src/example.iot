@@ -1,14 +1,14 @@
 mqtt(host="mndkk.dk", user='iot', pass="3Y5s6JrX", port=1883)
 sensortype pycom_lightsensor:
 	external init_lightsensor()
-	property lightlevel
+	property integer lightlevel 
 sensortype thermometer:
 	external init_thermometer(pin_in, pin_out, gnd)
-	property temp
+	property string temp
 actuatortype led:
 	external init_led()
-	property intensity
-	property status
+	property float intensity
+	property string status
 server:
 	host=192.168.0.1
 	port=1234
