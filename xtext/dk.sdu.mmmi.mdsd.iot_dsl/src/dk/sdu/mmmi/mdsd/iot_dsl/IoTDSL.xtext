@@ -15,7 +15,11 @@ ComponentType:
 ;
 
 Property:
-	"property" name=ID
+	"property" type=PropertyType name=ID
+;
+
+PropertyType:
+	"string" | "integer" | "float" | "boolean"
 ;
 
 External:

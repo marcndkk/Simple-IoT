@@ -18,6 +18,7 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expose
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mqtt
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
 import java.util.Set
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Property
 
 /**
  * Generates code from your model files on save.
@@ -90,7 +91,7 @@ class IoTDSLGenerator extends AbstractGenerator {
 					«FOR component : board.elements.filter(Component)»
 						«IF component.type instanceof SensorType»
 							«FOR property : component.type.properties»
-							//Subscribe: «board.name»/«component.name»/«property.name»
+							«generatePropertySubscription(board, component, property)»
 							«ENDFOR»
 						«ENDIF»
 					«ENDFOR»
@@ -108,6 +109,28 @@ class IoTDSLGenerator extends AbstractGenerator {
 				http.ListenAndServe(":50001", r)
 			}
 		'''
+		
+		def CharSequence generatePropertySubscription(Board board, Component component, Property property) '''
+			mqtt_client.Subscribe("«board.name»/«component.name»/«property.name»", 0, func(client mqtt.Client, msg mqtt.Message) {
+				«IF property.type.equals("string")»
+				value := string(msg.Payload())
+				«ELSE»
+				value, err := «property.generateStringConversion»
+				if err != nil {
+					fmt.Println(fmt.Errorf("Error on topic %v: %v", msg.Topic(), err))
+				}
+				«ENDIF»
+				server.«board.name».«component.name».«property.name» = value
+			})
+		'''
+		
+		def CharSequence generateStringConversion(Property property) {
+			switch property.type {
+				case "integer": "strconv.ParseInt(string(msg.Payload()), 10, 64)"
+				case "float": "strconv.ParseFloat(string(msg.Payload()), 64)"
+				case "boolean": "strconv.ParseBool(string(msg.Payload()))"
+			}
+		}
 		
 		def CharSequence generateMQTT(Mqtt mqtt) '''
 			opts := mqtt.NewClientOptions()
@@ -160,14 +183,22 @@ class IoTDSLGenerator extends AbstractGenerator {
 			}
 		'''
 		
-		// string should be replaced with real type, need type inference for that
 		def CharSequence generateComponentType(ComponentType type) '''
 			type «type.name» struct {
 				«FOR property : type.properties»
-				«property.name» string
+				«property.name» «property.type.generatePropertyType»
 				«ENDFOR»
 			}
 		'''
+		
+		def CharSequence generatePropertyType(String type) {
+			switch type {
+				case "string": "string"
+				case "integer": "int64"
+				case "float": "float64"
+				case "boolean": "bool"
+			}
+		}
 		
 		def Set<ComponentType> getUsedComponentTypes(System system) {
 			val types = newLinkedHashSet
