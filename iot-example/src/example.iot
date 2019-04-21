@@ -1,4 +1,4 @@
-mqtt(host="mndkk.dk", user='iot', pass="3Y5s6JrX", port=1883)
+mqtt(host="mndkk.dkkk", user='iot', pass="3Y5s6JrX", port=1883)
 sensortype pycom_lightsensor:
 	external init_lightsensor()
 	property integer lightlevel 
