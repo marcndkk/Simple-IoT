@@ -16,8 +16,10 @@ import com.google.inject.Inject
  */
 class IoTDSLGenerator extends AbstractGenerator {
 	@Inject ServerGenerator serverGen
+	@Inject ClientGenerator clientGen
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		serverGen.doGenerate(resource, fsa)
+		clientGen.doGenerate(resource, fsa)
 	}
 	
 }
