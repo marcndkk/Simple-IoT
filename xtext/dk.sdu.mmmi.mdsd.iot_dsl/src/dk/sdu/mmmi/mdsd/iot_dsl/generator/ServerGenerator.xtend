@@ -97,7 +97,7 @@ class ServerGenerator implements IGenerator{
 				go server.«loopNames.get(loop)»()
 				«ENDFOR»
 				
-				http.ListenAndServe(":50001", r)
+				http.ListenAndServe(":«system.server.port»", r)
 			}
 		'''
 		
