@@ -1,10 +1,10 @@
-mqtt(host="mndkk.dkkk", user='iot', pass="3Y5s6JrX", port=1883)
+mqtt(host="mndkk.dk", user='iot', pass="3Y5s6JrX", port=1883)
 sensortype pycom_lightsensor:
 	external init_lightsensor()
 	property integer lightlevel 
 sensortype thermometer:
 	external init_thermometer(pin_in, pin_out, gnd)
-	property string temp
+	property float temp
 actuatortype led:
 	external init_led()
 	property float intensity
@@ -14,11 +14,11 @@ server:
 	port=1234
 board b1:
 	wifi(ssid="MyWifi", pass="12345")
+	thermometer thermometer(16, 7, 4) 
 	lightsensor pycom_lightsensor()
 	led led()
 board b2:
 	wifi(ssid="MyOtherWifi", pass="54321")
-	thermometer thermometer(16, 7, 4) 
 	lightsensor pycom_lightsensor()
 	led led()
 every 1 minutes do
