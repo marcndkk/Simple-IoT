@@ -105,13 +105,16 @@ class ServerGenerator implements IGenerator{
 			mqtt_client.Subscribe("«board.name»/«component.name»/«property.name»", 0, func(client mqtt.Client, msg mqtt.Message) {
 				«IF property.type.equals("string")»
 				value := string(msg.Payload())
+				server.«board.name».«component.name».«property.name» = value
 				«ELSE»
 				value, err := «property.generateStringConversion»
 				if err != nil {
 					fmt.Println(fmt.Errorf("Error on topic %v: %v", msg.Topic(), err))
+				} else {
+					server.«board.name».«component.name».«property.name» = value
 				}
 				«ENDIF»
-				server.«board.name».«component.name».«property.name» = value
+				
 			})
 		'''
 		
