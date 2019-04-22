@@ -16,6 +16,9 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
 import java.util.Set
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Property
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Variable
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Assignment
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
 
 class ClientGenerator implements IGenerator{
 	
@@ -61,18 +64,19 @@ class ClientGenerator implements IGenerator{
 	from mqtt import MQTTClient
 	import machine
 	from machine import Pin
+	from machine import Timer
 	import time
 	
 	server = '«system.mqtt.host»'
 	«FOR component : board.elements.filter(Component)»
 	«component.name» = «component.type.name» («component.args»)
 	«ENDFOR»
-	p_out = Pin('P19', mode=Pin.OUT)
-	p_out.value(1)
-	
-	adc = machine.ADC()             # create an ADC object
-	apin = adc.channel(pin='P16')   # create an analog pin on P16
-	val = apin()
+«««	p_out = Pin('P19', mode=Pin.OUT)
+«««	p_out.value(1)
+«««	
+«««	adc = machine.ADC()             # create an ADC object
+«««	apin = adc.channel(pin='P16')   # create an analog pin on P16
+«««	val = apin()
 	
 	
 	def sub_cb(topic, msg):
@@ -84,20 +88,49 @@ class ClientGenerator implements IGenerator{
 	
 	client.connect()
 	
-	count = 0
-	while True:
+	«IF !system.logic.filter(Loop).empty»
+	
+	«FOR logic : system.logic.filter(Loop)»
+	
+	«FOR statement : logic.statements.filter(Variable)»
+	
+	def _«statement.name»_handler(alarm):
 	   millivolts = apin.voltage()
 	   degC = (millivolts - 500.0) / 10.0
-	   client.publish(topic="test/feeds/count", msg=str(count))
-	
 	   degC_data = str(degC)
-	   time.sleep(1)
+	   client.publish(topic="«board.name»/«getPropertyUses(logic)»", msg=degC_data)
+
+	Timer.Alarm(handler=_«statement.name»_handler, s=«generateTimeUnit(logic.time, logic.timeunit)», periodic=True)	
+	«ENDFOR»
+
+«««		   millivolts = apin.voltage()
+«««		   degC = (millivolts - 500.0) / 10.0
+«««		   client.publish(topic="test/feeds/count", msg=str(count))
+«««		
+«««		   degC_data = str(degC)
+«««		   time.sleep(1)
+«««		
+«««		
+«««		   client.publish(topic="test/feeds/temp", msg=degC_data)
+«««		   count += 1
+   «ENDFOR»
+   	while True:
+	«ENDIF»
 	
-	
-	   client.publish(topic="test/feeds/temp", msg=degC_data)
-	   count += 1
-	
-	   time.sleep(59)
 	'''
 	
+	def CharSequence getPropertyUses(Loop loop)'''
+	'''
+	
+	def CharSequence generateStatement(Statement statement) '''
+			// Insert statement here
+		'''
+	
+	def CharSequence generateTimeUnit(int seconds, String timeUnit) {
+			switch timeUnit {
+				case "hours": ""+seconds*3600+""
+				case "minutes": ""+seconds*60+""
+				case "seconds": ""+seconds+""
+			}
+		}
 }
