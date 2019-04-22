@@ -15,6 +15,21 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mqtt
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
 import java.util.Set
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Property
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Variable
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.If
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Assignment
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expression
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Condition
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Plus
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Minus
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mult
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Div
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Text
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Average
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Percentage
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Reference
+import static extension org.eclipse.xtext.EcoreUtil2.*
 
 class ServerGenerator implements IGenerator{
 	
@@ -99,6 +114,22 @@ class ServerGenerator implements IGenerator{
 				
 				http.ListenAndServe(":«system.server.port»", r)
 			}
+			
+			func float_average(xs []float64) float64 {
+				total := float64(0)
+				for _, x := range xs {
+					total += x
+				}
+				return total / float64(len(xs))
+			}
+			
+			func int_average(xs []int64) int64 {
+				total := int64(0)
+				for _, x := range xs {
+					total += x
+				}
+				return total / int64(len(xs))
+			}
 		'''
 		
 		def CharSequence generatePropertySubscription(Board board, Component component, Property property) '''
@@ -157,9 +188,109 @@ class ServerGenerator implements IGenerator{
 			}
 		}
 		
-		def CharSequence generateStatement(Statement statement) '''
-			// Insert statement here
-		'''
+		def CharSequence generateStatement(Statement statement) {
+			switch statement {
+				Variable: '''«statement.name» := «statement.exp.generateExp»'''
+				Assignment: statement.generateAssignment
+				If: '''
+				if «statement.condition.generateCondition» {
+					«FOR stmt : statement.statements»
+					«stmt.generateStatement»
+					«ENDFOR»
+				}«FOR elseif : statement.elseifs» else if «elseif.condition.generateCondition» {
+					«FOR stmt : elseif.statements»
+					«stmt.generateStatement»
+					«ENDFOR»
+				}«ENDFOR»«IF statement.^else !== null» else {
+					«FOR stmt : statement.^else.statements»
+					«stmt.generateStatement»
+					«ENDFOR»
+				}«ENDIF»
+				'''
+			}
+		}
+	
+	def CharSequence generateAssignment(Assignment assignment) {
+		var ref = assignment.ref
+		switch ref {
+			PropertyUse: {
+				if (ref.board !== null) '''
+					s.«ref.board.name».«ref.component.name».«ref.property.name» = «assignment.exp.generateExp»
+					s.send_message("«ref.board.name»/«ref.component.name»/«ref.property.name»", «assignment.exp.generateExp»)'''
+				else {
+					'''
+					«FOR board : ref.getContainerOfType(System).boards»
+					«FOR component : board.getComponentsOfType(ref.componenttype)»
+					s.«board.name».«component.name».«ref.property.name» = «assignment.exp.generateExp»
+					s.send_message("«board.name»/«component.name»/«ref.property.name»", «assignment.exp.generateExp»)
+					«ENDFOR»
+					«ENDFOR»'''
+				}
+			}
+			Reference: '''«assignment.ref.ref.name» = «assignment.exp.generateExp»'''
+		}
+	}
+		
+		def CharSequence generateExp(Expression exp) {
+			switch exp {
+				Plus: '''«exp.left.generateExp» + «exp.right.generateExp»'''
+				Minus: '''«exp.left.generateExp» - «exp.right.generateExp»'''
+				Mult: '''«exp.left.generateExp» * «exp.right.generateExp»'''
+				Div: '''«exp.left.generateExp» / «exp.right.generateExp»'''
+				Text: '''"«exp.value»"'''
+				Average: exp.generateAverage
+				Percentage: '''«exp.value / 100.0»'''
+				PropertyUse: exp.generatePropertyUse
+				Reference: exp.ref.name
+			}
+		}
+	
+		def CharSequence generateAverage(Average avg) {
+			if (avg.ref.property.type == "integer") {return '''int_average(«avg.ref.generatePropertyUse»)'''}
+			else if (avg.ref.property.type == "float") {return '''float_average(«avg.ref.generatePropertyUse»)'''}
+
+		} 
+			
+		def CharSequence generatePropertyUse(PropertyUse use) {
+			if (use.board === null) {
+				'''[]«use.property.type.generatePropertyType»{«use.generatePropertyList»}'''
+			} else {
+				'''s.«use.board.name».«use.component.name».«use.property.name»'''
+			}
+		}
+		
+		def CharSequence generatePropertyList(PropertyUse use) {
+			var list = ""
+			for (Board board : use.getContainerOfType(System).boards) {
+				for (Component component : board.getComponentsOfType(use.componenttype)) {
+					list += '''s.«board.name».«component.name».«use.property.name», '''
+				}
+			}
+			
+			return list
+		}
+	
+		def getComponentsOfType(Board board, ComponentType type) {
+			var components = newArrayList
+			for(Component component : board.elements.filter(Component)) {
+				if (component.type == type) {
+					components.add(component)
+				}
+			}
+			return components
+		}
+		
+		def CharSequence generateCondition(Condition cond) '''
+		true'''
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		def CharSequence generateExpose(Expose expose) '''
 			func (s *server) «expose.name»(w http.ResponseWriter, r *http.Request) {

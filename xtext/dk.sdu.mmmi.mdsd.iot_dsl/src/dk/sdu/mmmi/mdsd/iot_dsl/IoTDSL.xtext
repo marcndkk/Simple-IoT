@@ -86,6 +86,14 @@ Variable:
 ;
 
 Expression:
+	Factor (({Plus.left=current} '+' | {Minus.left=current} '-') right=Factor)*
+;
+
+Factor returns Expression:
+	Primary (({Mult.left=current} '*' | {Div.left=current} '/') right=Primary)*
+;
+
+Primary returns Expression:
 	Reference | Number | Text | Average | Percentage
 ;
 
@@ -110,7 +118,7 @@ Text:
 ;
 
 Average:
-	'average' '(' Reference ')'
+	'average' '(' ref=PropertyUse ')'
 ;
 
 If:
@@ -122,7 +130,7 @@ Condition:
 ;
 
 Comparison:
-	left=Expression COp right=Expression
+	left=Expression cOp=COp right=Expression
 ;
 
 COp:
