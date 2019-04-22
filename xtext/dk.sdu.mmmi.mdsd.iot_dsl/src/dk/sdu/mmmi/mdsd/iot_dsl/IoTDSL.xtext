@@ -58,7 +58,11 @@ WiFi:
 ;
 
 Component:
-	name=ID type=[ComponentType] '(' args+=Argument? (',' args+=Argument)* ')'
+	name=ID type=[ComponentType] '(' args+=Argument? (',' args+=Argument)* ')' rate=Rate?
+;
+
+Rate:
+	'every' time=INT timeUnit=TimeUnit
 ;
 
 Argument:
