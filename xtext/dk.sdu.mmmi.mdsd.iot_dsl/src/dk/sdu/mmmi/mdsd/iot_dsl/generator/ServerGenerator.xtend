@@ -193,13 +193,13 @@ class ServerGenerator implements IGenerator{
 			PropertyUse: {
 				if (ref.board !== null) '''
 					s.«ref.board.name».«ref.component.name».«ref.property.name» = «assignment.exp.generateExp»
-					s.send_message("«ref.board.name»/«ref.component.name»/«ref.property.name»", «assignment.exp.generateExp»)'''
+					s.send_message("«ref.board.name»/«ref.component.name»/«ref.property.name»", fmt.Sprintf("%v", «assignment.exp.generateExp»))'''
 				else {
 					'''
 					«FOR board : ref.getContainerOfType(System).boards»
 					«FOR component : board.getComponentsOfType(ref.componenttype)»
 					s.«board.name».«component.name».«ref.property.name» = «assignment.exp.generateExp»
-					s.send_message("«board.name»/«component.name»/«ref.property.name»", «assignment.exp.generateExp»)
+					s.send_message("«board.name»/«component.name»/«ref.property.name»", fmt.Sprintf("%v", «assignment.exp.generateExp»))
 					«ENDFOR»
 					«ENDFOR»'''
 				}
