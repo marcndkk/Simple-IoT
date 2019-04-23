@@ -4,31 +4,8 @@ import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import java.util.Map
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Loop
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ComponentType
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Statement
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expose
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mqtt
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.*
 import java.util.Set
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Property
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Variable
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.If
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Assignment
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expression
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Condition
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Plus
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Minus
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mult
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Div
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Text
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Average
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Percentage
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Reference
 import static extension org.eclipse.xtext.EcoreUtil2.*
 
 class ServerGenerator implements IGenerator{
@@ -193,11 +170,11 @@ class ServerGenerator implements IGenerator{
 				Variable: '''«statement.name» := «statement.exp.generateExp»'''
 				Assignment: statement.generateAssignment
 				If: '''
-				if «statement.condition.generateCondition» {
+				if «statement.condition.generateExp» {
 					«FOR stmt : statement.statements»
 					«stmt.generateStatement»
 					«ENDFOR»
-				}«FOR elseif : statement.elseifs» else if «elseif.condition.generateCondition» {
+				}«FOR elseif : statement.elseifs» else if «elseif.condition.generateExp» {
 					«FOR stmt : elseif.statements»
 					«stmt.generateStatement»
 					«ENDFOR»
@@ -242,6 +219,13 @@ class ServerGenerator implements IGenerator{
 				Percentage: '''«exp.value / 100.0»'''
 				PropertyUse: exp.generatePropertyUse
 				Reference: exp.ref.name
+				Number: exp.value.toString
+				Boolean: exp.value
+				FloatNumber: exp.value.toString
+				Or: '''«exp.left.generateExp» || «exp.right.generateExp»'''
+				And: '''«exp.left.generateExp» && «exp.right.generateExp»'''
+				Equality: '''«exp.left.generateExp» «exp.op» «exp.right.generateExp»'''
+				Comparison: '''«exp.left.generateExp» «exp.op» «exp.right.generateExp»'''
 			}
 		}
 	
@@ -279,18 +263,6 @@ class ServerGenerator implements IGenerator{
 			}
 			return components
 		}
-		
-		def CharSequence generateCondition(Condition cond) '''
-		true'''
-		
-		
-		
-		
-		
-		
-		
-		
-		
 		
 		def CharSequence generateExpose(Expose expose) '''
 			func (s *server) «expose.name»(w http.ResponseWriter, r *http.Request) {
