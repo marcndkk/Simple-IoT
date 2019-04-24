@@ -20,7 +20,7 @@ class ClientGenerator implements IGenerator{
 		val system = resource.allContents.filter(System).next
 		for(board : system.boards){
 			fsa.generateFile('client_'+board.name+'/boot.py', system.generateClientBoot(board))
-			fsa.generateFile('client_'+board.name+'/main.py', system.generateClientMain(board))
+			fsa.generateFile('client_'+board.name+'/core.py', system.generateClientMain(board))
 			fsa.generateFile('client_'+board.name+'/components.py', system.generateClientComponents(board))
 		}
 
@@ -78,49 +78,55 @@ class ClientGenerator implements IGenerator{
 	from machine import Timer
 	import time
 	
-	«FOR component : board.elements.filter(Component)»
-	«component.name» = None
-	«ENDFOR»
-	def run():
-		
-		def sub_cb(topic, msg):
+	class Core:
+		def __init__(self, «FOR comp : board.elements.filter(Component) SEPARATOR ","»«comp.name»«ENDFOR»):
+			«FOR component : board.elements.filter(Component)»
+			self.«component.name» = «component.name»
+			«ENDFOR»
+			self.client = MQTTClient("«board.name»", "«system.mqtt.host»", user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
+			
+		def sub_cb(self, topic, msg):
+			topic_str = topic.decode("utf-8")
+			msg_str = msg.decode("utf-8")
 			«FOR component : board.elements.filter(Component)»
 			«IF component.type instanceof ActuatorType»
 			«FOR property : component.type.properties»
-			if topic == "«board.name»/«component.name»/«property.name»":
-				«component.name».«property.name»(msg)
+			if topic_str == "«board.name»/«component.name»/«property.name»":
+				self.«component.name».«property.name»(msg_str)
 			«ENDFOR»
 			«ENDIF»
 			«ENDFOR»
-		
-		«FOR component : board.elements.filter(Component)»
-		«IF component.type instanceof ActuatorType»
-		«FOR property : component.type.properties»
-		client.subscribe("«board.name»/«component.name»/«property.name»")
-		«ENDFOR»
-		«ENDIF»
-		«ENDFOR»
 			
-		client = MQTTClient("«board.name»", "«system.mqtt.host»", user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
-		
-		client.set_callback(sub_cb)
-		client.connect()
-		«FOR logic : system.logic.filter(Loop)»
-		
-		«FOR component : board.elements.filter(Component)»
-		«IF component.type instanceof SensorType»
-		«FOR property : component.type.properties»
-		def _«component.name»_handler(alarm):
-		   client.publish(topic="«board.name»/«component.name»/«property.name»", msg=«component.name».«property.name»())
-		
-		Timer.Alarm(handler=_«component.name»_handler, s=«generateTimeUnit(component.rate.time, component.rate.timeUnit)», periodic=True)	
-		«ENDFOR»
-		«ENDIF»
-		«ENDFOR»
-	   «ENDFOR»
-	   
-		while True:
-			machine.idle()	
+		def run(self):
+			self.client.set_callback(self.sub_cb)
+			self.client.connect()
+			«FOR component : board.elements.filter(Component)»
+			«IF component.type instanceof ActuatorType»
+			«FOR property : component.type.properties»
+			self.client.subscribe("«board.name»/«component.name»/«property.name»")
+			«ENDFOR»
+			«ENDIF»
+			«ENDFOR»
+			«FOR logic : system.logic.filter(Loop)»
+			
+			«FOR component : board.elements.filter(Component)»
+			«IF component.type instanceof SensorType»
+			«FOR property : component.type.properties»
+			def _«component.name»_handler(self, alarm):
+			   self.client.publish(topic="«board.name»/«component.name»/«property.name»", msg=self.«component.name».«property.name»())
+			
+			alarm = Timer.Alarm(handler=_«component.name»_handler, s=«generateTimeUnit(component.rate.time, component.rate.timeUnit)», periodic=True)	
+			«ENDFOR»
+			«ENDIF»
+			«ENDFOR»
+		   «ENDFOR»
+			try:
+				while True:
+					self.client.wait_msg()
+					machine.idle()
+			finally:
+				alarm.cancel()
+				self.client.disconnect()	
 		'''
 	
 	def CharSequence generateStatement(Statement statement) '''

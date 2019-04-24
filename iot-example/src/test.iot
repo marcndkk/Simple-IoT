@@ -1,0 +1,28 @@
+mqtt(host="mndkk.dk", user='iot', pass="3Y5s6JrX", port=1883)
+sensortype pycom_lightsensor:
+	external init_lightsensor()
+	property integer lightlevel 
+actuatortype led:
+	external init_led()
+	property float intensity
+	property string status
+server:
+	host=192.168.0.1
+	port=1234
+board b1:
+	wifi(ssid="iottest", pass="iottest123")
+	lightsensor pycom_lightsensor() every 5 seconds
+	led led()
+every 10 seconds do
+	var light_level = average(*.pycom_lightsensor.lightlevel)
+	if light_level > 500 then
+		*.led.intensity = 0%
+	elseif light_level > 250 then
+		*.led.intensity = 50%
+	else
+		*.led.intensity = 100%
+		b1.led.intensity = 50%
+expose turn_on
+	*.led.status = "ON" 
+expose turn_off
+	*.led.status = "OFF"
