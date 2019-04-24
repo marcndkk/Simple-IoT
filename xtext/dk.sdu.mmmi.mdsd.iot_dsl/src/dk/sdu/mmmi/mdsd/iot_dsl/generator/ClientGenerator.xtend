@@ -101,7 +101,7 @@ class ClientGenerator implements IGenerator{
 		«ENDIF»
 		«ENDFOR»
 			
-		client = MQTTClient(str(«board.name»), server, user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
+		client = MQTTClient("«board.name»", "«system.mqtt.host»", user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
 		
 		client.set_callback(sub_cb)
 		client.connect()
