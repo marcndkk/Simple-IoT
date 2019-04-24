@@ -2,40 +2,53 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gorilla/mux"
 )
 
 type server struct {
+	client mqtt.Client
 	b1     *board_b1
 	b2     *board_b2
-	client mqtt.Client
+}
+
+func (s *server) send_message(topic string, payload interface{}) {
+	token := s.client.Publish(topic, 0, false, payload)
+	token.Wait()
+}
+
+func (s *server) loop0() {
+	for _ = range time.Tick(1 * time.Second) {
+		fmt.Println("light:", s.b1.lightsensor.lightlevel)
+	}
+}
+
+func (s *server) turn_on(w http.ResponseWriter, r *http.Request) {
+	// Insert statement here
+}
+func (s *server) turn_off(w http.ResponseWriter, r *http.Request) {
+	// Insert statement here
 }
 
 type board_b1 struct {
 	lightsensor *pycom_lightsensor
 	led         *led
 }
-
 type board_b2 struct {
-	thermometer *thermometer
 	lightsensor *pycom_lightsensor
 	led         *led
 }
 
-type led struct {
-	intensity float32
-	status    string
-}
-
-type thermometer struct {
-	temp float32
-}
-
 type pycom_lightsensor struct {
-	lightlevel int
+	lightlevel int64
+}
+type led struct {
+	intensity float64
+	status    string
 }
 
 func main() {
@@ -45,37 +58,37 @@ func main() {
 	opts.SetUsername("iot")
 	opts.SetPassword("3Y5s6JrX")
 
-	c := mqtt.NewClient(opts)
-
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
+	mqtt_client := mqtt.NewClient(opts)
+	if token := mqtt_client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
 
-	b1 := board_b1{}
-	b1.led = &led{}
-	b1.lightsensor = &pycom_lightsensor{}
+	server := server{
+		mqtt_client,
+		&board_b1{&pycom_lightsensor{}, &led{}},
+		&board_b2{&pycom_lightsensor{}, &led{}},
+	}
 
-	b2 := board_b2{&thermometer{}, &pycom_lightsensor{}, &led{}}
-
-	server := server{&b1, &b2, c}
-
-	c.Subscribe("b1/lightsensor/lightlevel", 0, func(client mqtt.Client, msg mqtt.Message) {
-		value, err := strconv.Atoi(string(msg.Payload()))
+	mqtt_client.Subscribe("b1/lightsensor/lightlevel", 0, func(client mqtt.Client, msg mqtt.Message) {
+		value, err := strconv.ParseInt(string(msg.Payload()), 10, 64)
 		if err != nil {
 			fmt.Println(fmt.Errorf("Error on topic %v: %v", msg.Topic(), err))
 		}
 		server.b1.lightsensor.lightlevel = value
 	})
+	mqtt_client.Subscribe("b2/lightsensor/lightlevel", 0, func(client mqtt.Client, msg mqtt.Message) {
+		value, err := strconv.ParseInt(string(msg.Payload()), 10, 64)
+		if err != nil {
+			fmt.Println(fmt.Errorf("Error on topic %v: %v", msg.Topic(), err))
+		}
+		server.b2.lightsensor.lightlevel = value
+	})
 
-	defer c.Disconnect(250)
-	doshit(c, &server)
+	r := mux.NewRouter()
+	r.HandleFunc("/turn_on", server.turn_on)
+	r.HandleFunc("/turn_off", server.turn_off)
 
-}
+	go server.loop0()
 
-func doshit(c mqtt.Client, s *server) {
-	for _ = range time.Tick(2 * time.Second) {
-		fmt.Println("sending", s.b1.lightsensor.lightlevel)
-		token := c.Publish("test", 0, false, fmt.Sprint("light:", s.b1.lightsensor.lightlevel))
-		token.Wait()
-	}
+	http.ListenAndServe(":50001", r)
 }

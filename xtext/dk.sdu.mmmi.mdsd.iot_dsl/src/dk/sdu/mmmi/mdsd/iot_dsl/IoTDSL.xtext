@@ -1,5 +1,7 @@
 grammar dk.sdu.mmmi.mdsd.iot_dsl.IoTDSL with org.eclipse.xtext.common.Terminals
 
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
 generate ioTDSL "http://www.sdu.dk/mmmi/mdsd/iot_dsl/IoTDSL"
 
 System:
@@ -90,7 +92,45 @@ Variable:
 ;
 
 Expression:
-	Reference | Number | Text | Average | Percentage
+	Or
+;
+
+Or returns Expression:
+	And ({Or.left=current} '||' right=And)*
+;
+
+And returns Expression:
+	Equality ({And.left=current} "&&" right=Equality)*
+;
+
+Equality returns Expression:
+	Comparison ({Equality.left=current} op=("=="|"!=") right=Comparison)*
+;
+Comparison returns Expression:
+	PlusOrMinus ({Comparison.left=current} op=(">="|"<="|">"|"<") right=PlusOrMinus)*
+;
+PlusOrMinus returns Expression:
+	Factor (({Plus.left=current} '+' | {Minus.left=current} '-') right=Factor)*
+;
+
+Factor returns Expression:
+	Primary (({Mult.left=current} '*' | {Div.left=current} '/') right=Primary)*
+;
+
+Primary returns Expression:
+	Reference | Number | Text | Average | Percentage | FloatNumber | Boolean
+;
+
+Boolean:
+	value=('true' | 'false')
+;
+
+FloatNumber:
+	value=FLOAT
+;
+
+FLOAT returns ecore::EFloat:
+	INT '.' INT
 ;
 
 Percentage:
@@ -114,27 +154,15 @@ Text:
 ;
 
 Average:
-	'average' '(' Reference ')'
+	'average' '(' ref=PropertyUse ')'
 ;
 
 If:
-	'if' condition=Condition 'then' BEGIN statements+=Statement+  END elseifs+=ElseIf* else=Else?
-;
-
-Condition:
-	Expression | Comparison
-;
-
-Comparison:
-	left=Expression COp right=Expression
-;
-
-COp:
-	'<' | '>' | '<=' | '>=' | '==' | '!='
+	'if' condition=Expression 'then' BEGIN statements+=Statement+  END elseifs+=ElseIf* else=Else?
 ;
 
 ElseIf:
-	'elseif' condition=Condition 'then' BEGIN statements+=Statement+ END
+	'elseif' condition=Expression 'then' BEGIN statements+=Statement+ END
 ;
 
 Else:
