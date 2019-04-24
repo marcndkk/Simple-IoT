@@ -19,10 +19,11 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Variable
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Assignment
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ActuatorType
 
 class ClientGenerator implements IGenerator{
 	
-//	var Map<Loop, String> loopNames
+	var Set<PropertyUse> property_uses
 	
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		val system = resource.allContents.filter(System).next
@@ -60,6 +61,11 @@ class ClientGenerator implements IGenerator{
 	        break
 	
 	'''
+	
+	def CharSequence generatePropertySubscription(Board board, Component component, Property property) '''
+			client.subscribe("«board.name»/«component.name»/«property.name»)
+		'''
+	
 	def CharSequence generateClientMain(System system, Board board) '''
 	from mqtt import MQTTClient
 	import machine
@@ -67,40 +73,60 @@ class ClientGenerator implements IGenerator{
 	from machine import Timer
 	import time
 	
-	server = '«system.mqtt.host»'
+	
+	def sub_cb(topic, msg):
 	«FOR component : board.elements.filter(Component)»
-	«component.name» = «component.type.name» («component.args»)
+	«««	«component.name» = «component.type.name» («component.args»)
+		«IF component.type instanceof ActuatorType»
+			«FOR property : component.type.properties»
+			if topic == "«board.name»/«component.name»/«property.name»":
+				«component.name».«property.name» = msg
+			«««			«generatePropertySubscription(board, component, property)»
+			«ENDFOR»
+		«ENDIF»
+«««		pycom.rgbled(intesity)
 	«ENDFOR»
+	
+	«FOR component : board.elements.filter(Component)»
+		«IF component.type instanceof ActuatorType»
+			«FOR property : component.type.properties»
+	client.subscribe("«board.name»/«component.name»/«property.name»")
+			«ENDFOR»
+		«ENDIF»
+«««		pycom.rgbled(intesity)
+	«ENDFOR»
+
+		
+		
+	client = MQTTClient(str(«board.name»), server, user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
+	
+	client.set_callback(sub_cb)
+	client.connect()
+	
+«««	server = '«system.mqtt.host»'
+	
 «««	p_out = Pin('P19', mode=Pin.OUT)
 «««	p_out.value(1)
 «««	
 «««	adc = machine.ADC()             # create an ADC object
 «««	apin = adc.channel(pin='P16')   # create an analog pin on P16
 «««	val = apin()
-	
-	
-	def sub_cb(topic, msg):
-	   pass
-	   # print(msg)
-	
-	
-	client = MQTTClient(str(«board.name»), server, user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
-	
-	client.connect()
-	
-	«IF !system.logic.filter(Loop).empty»
-	
+		
 	«FOR logic : system.logic.filter(Loop)»
 	
-	«FOR statement : logic.statements.filter(Variable)»
-	
-	def _«statement.name»_handler(alarm):
+«««	«FOR statement : logic.statements.filter(Variable)»
+	«FOR component : board.elements.filter(Component)»
+		«IF component.type instanceof SensorType»
+			«FOR property : component.type.properties»
+	def _«component.name»_handler(alarm):
 	   millivolts = apin.voltage()
 	   degC = (millivolts - 500.0) / 10.0
 	   degC_data = str(degC)
-	   client.publish(topic="«board.name»/«getPropertyUses(logic)»", msg=degC_data)
+	   client.publish(topic="«board.name»/«component.name»/«property.name»", msg=«component.name».«property.name»)
 
-	Timer.Alarm(handler=_«statement.name»_handler, s=«generateTimeUnit(logic.time, logic.timeunit)», periodic=True)	
+	Timer.Alarm(handler=_«component.name»_handler, s=«generateTimeUnit(component.rate.time, component.rate.timeUnit)», periodic=True)	
+			«ENDFOR»
+		«ENDIF»
 	«ENDFOR»
 
 «««		   millivolts = apin.voltage()
@@ -114,9 +140,9 @@ class ClientGenerator implements IGenerator{
 «««		   client.publish(topic="test/feeds/temp", msg=degC_data)
 «««		   count += 1
    «ENDFOR»
-   	while True:
-	«ENDIF»
-	
+   
+	while True:
+		machine.idle()	
 	'''
 	
 	def CharSequence getPropertyUses(Loop loop)'''
