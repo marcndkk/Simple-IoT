@@ -32,9 +32,26 @@ class ClientGenerator implements IGenerator{
 		for(board : system.boards){
 			fsa.generateFile('client_'+board.name+'/boot.py', system.generateClientBoot(board))
 			fsa.generateFile('client_'+board.name+'/main.py', system.generateClientMain(board))
+			fsa.generateFile('client_'+board.name+'/components.py', system.generateClientComponents(board))
 		}
 
 	}
+	
+	def CharSequence generateClientComponents(System system, Board board)'''
+	from abc import ABC, abstractmethod
+	«FOR component : board.elements.filter(Component)»
+	class «component.type.name»(ABC):
+	
+		def «component.type.external.name»(self):
+			pass
+		
+		«FOR property : component.type.properties»
+		def «property.name»(self):
+			pass
+			
+		«ENDFOR»
+	«ENDFOR»
+	'''
 	
 	def CharSequence generateClientBoot(System system, Board board) '''
 	from network import WLAN
@@ -69,81 +86,53 @@ class ClientGenerator implements IGenerator{
 	def CharSequence generateClientMain(System system, Board board) '''
 	from mqtt import MQTTClient
 	import machine
-	from machine import Pin
 	from machine import Timer
 	import time
 	
-	
-	def sub_cb(topic, msg):
 	«FOR component : board.elements.filter(Component)»
-	«««	«component.name» = «component.type.name» («component.args»)
-		«IF component.type instanceof ActuatorType»
+	«component.name» = None
+	«ENDFOR»
+	def run():
+		
+		def sub_cb(topic, msg):
+			«FOR component : board.elements.filter(Component)»
+			«IF component.type instanceof ActuatorType»
 			«FOR property : component.type.properties»
 			if topic == "«board.name»/«component.name»/«property.name»":
-				«component.name».«property.name» = msg
-			«««			«generatePropertySubscription(board, component, property)»
+				«component.name».«property.name»(msg)
 			«ENDFOR»
-		«ENDIF»
-«««		pycom.rgbled(intesity)
-	«ENDFOR»
-	
-	«FOR component : board.elements.filter(Component)»
+			«ENDIF»
+			«ENDFOR»
+		
+		«FOR component : board.elements.filter(Component)»
 		«IF component.type instanceof ActuatorType»
-			«FOR property : component.type.properties»
-	client.subscribe("«board.name»/«component.name»/«property.name»")
-			«ENDFOR»
+		«FOR property : component.type.properties»
+		client.subscribe("«board.name»/«component.name»/«property.name»")
+		«ENDFOR»
 		«ENDIF»
-«««		pycom.rgbled(intesity)
-	«ENDFOR»
-
+		«ENDFOR»
+			
+		client = MQTTClient(str(«board.name»), server, user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
 		
+		client.set_callback(sub_cb)
+		client.connect()
+		«FOR logic : system.logic.filter(Loop)»
 		
-	client = MQTTClient(str(«board.name»), server, user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
-	
-	client.set_callback(sub_cb)
-	client.connect()
-	
-«««	server = '«system.mqtt.host»'
-	
-«««	p_out = Pin('P19', mode=Pin.OUT)
-«««	p_out.value(1)
-«««	
-«««	adc = machine.ADC()             # create an ADC object
-«««	apin = adc.channel(pin='P16')   # create an analog pin on P16
-«««	val = apin()
-		
-	«FOR logic : system.logic.filter(Loop)»
-	
-«««	«FOR statement : logic.statements.filter(Variable)»
-	«FOR component : board.elements.filter(Component)»
+		«FOR component : board.elements.filter(Component)»
 		«IF component.type instanceof SensorType»
-			«FOR property : component.type.properties»
-	def _«component.name»_handler(alarm):
-	   millivolts = apin.voltage()
-	   degC = (millivolts - 500.0) / 10.0
-	   degC_data = str(degC)
-	   client.publish(topic="«board.name»/«component.name»/«property.name»", msg=«component.name».«property.name»)
-
-	Timer.Alarm(handler=_«component.name»_handler, s=«generateTimeUnit(component.rate.time, component.rate.timeUnit)», periodic=True)	
-			«ENDFOR»
+		«FOR property : component.type.properties»
+		def _«component.name»_handler(alarm):
+		   client.publish(topic="«board.name»/«component.name»/«property.name»", msg=«component.name».«property.name»())
+		
+		Timer.Alarm(handler=_«component.name»_handler, s=«generateTimeUnit(component.rate.time, component.rate.timeUnit)», periodic=True)	
+		«ENDFOR»
 		«ENDIF»
-	«ENDFOR»
-
-«««		   millivolts = apin.voltage()
-«««		   degC = (millivolts - 500.0) / 10.0
-«««		   client.publish(topic="test/feeds/count", msg=str(count))
-«««		
-«««		   degC_data = str(degC)
-«««		   time.sleep(1)
-«««		
-«««		
-«««		   client.publish(topic="test/feeds/temp", msg=degC_data)
-«««		   count += 1
-   «ENDFOR»
-   
-	while True:
-		machine.idle()	
-	'''
+		«ENDFOR»
+	   «ENDFOR»
+	   
+		while True:
+			machine.idle()	
+		'''
 	
 	def CharSequence getPropertyUses(Loop loop)'''
 	'''
