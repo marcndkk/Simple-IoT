@@ -14,12 +14,12 @@ server:
 	port=1234
 board b1:
 	wifi(ssid="MyWifi", pass="12345")
-	thermometer thermometer(16, 7, 4) 
-	lightsensor pycom_lightsensor()
+	lightsensor pycom_lightsensor() every 1 minutes
 	led led()
 board b2:
 	wifi(ssid="MyOtherWifi", pass="54321")
-	lightsensor pycom_lightsensor()
+	thermometer thermometer(16, 7, 4) every 1 minutes
+	lightsensor pycom_lightsensor() every 1 minutes
 	led led()
 every 1 minutes do
 	var light_level = average(*.pycom_lightsensor.lightlevel)

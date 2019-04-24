@@ -1,36 +1,46 @@
 package dk.sdu.mmmi.mdsd.iot_dsl.generator
 
-import org.eclipse.xtext.generator.IGenerator
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.generator.IFileSystemAccess
-import java.util.Map
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Loop
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ActuatorType
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ComponentType
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Statement
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expose
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mqtt
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
-import java.util.Set
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Loop
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Property
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Statement
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtext.generator.IFileSystemAccess
+import org.eclipse.xtext.generator.IGenerator
 
 class ClientGenerator implements IGenerator{
 	
-//	var Map<Loop, String> loopNames
 	
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		val system = resource.allContents.filter(System).next
-//		loopNames = newLinkedHashMap
-//		system.logic.filter(Loop).forEach[loop, i| loopNames.put(loop, "loop"+i)]
 		for(board : system.boards){
 			fsa.generateFile('client_'+board.name+'/boot.py', system.generateClientBoot(board))
 			fsa.generateFile('client_'+board.name+'/main.py', system.generateClientMain(board))
+			fsa.generateFile('client_'+board.name+'/components.py', system.generateClientComponents(board))
 		}
 
 	}
+	
+	def CharSequence generateClientComponents(System system, Board board)'''
+	from abc import ABC, abstractmethod
+	«FOR component : board.elements.filter(Component)»
+	class «component.type.name»(ABC):
+	
+		def «component.type.external.name»(self):
+			pass
+		
+		«FOR property : component.type.properties»
+		def «property.name»(self):
+			pass
+			
+		«ENDFOR»
+	«ENDFOR»
+	'''
 	
 	def CharSequence generateClientBoot(System system, Board board) '''
 	from network import WLAN
@@ -57,47 +67,71 @@ class ClientGenerator implements IGenerator{
 	        break
 	
 	'''
+	
+	def CharSequence generatePropertySubscription(Board board, Component component, Property property) '''
+			client.subscribe("«board.name»/«component.name»/«property.name»)
+		'''
+	
 	def CharSequence generateClientMain(System system, Board board) '''
 	from mqtt import MQTTClient
 	import machine
-	from machine import Pin
+	from machine import Timer
 	import time
 	
-	server = '«system.mqtt.host»'
 	«FOR component : board.elements.filter(Component)»
-	«component.name» = «component.type.name» («component.args»)
+	«component.name» = None
 	«ENDFOR»
-	p_out = Pin('P19', mode=Pin.OUT)
-	p_out.value(1)
+	def run():
+		
+		def sub_cb(topic, msg):
+			«FOR component : board.elements.filter(Component)»
+			«IF component.type instanceof ActuatorType»
+			«FOR property : component.type.properties»
+			if topic == "«board.name»/«component.name»/«property.name»":
+				«component.name».«property.name»(msg)
+			«ENDFOR»
+			«ENDIF»
+			«ENDFOR»
+		
+		«FOR component : board.elements.filter(Component)»
+		«IF component.type instanceof ActuatorType»
+		«FOR property : component.type.properties»
+		client.subscribe("«board.name»/«component.name»/«property.name»")
+		«ENDFOR»
+		«ENDIF»
+		«ENDFOR»
+			
+		client = MQTTClient(str(«board.name»), server, user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
+		
+		client.set_callback(sub_cb)
+		client.connect()
+		«FOR logic : system.logic.filter(Loop)»
+		
+		«FOR component : board.elements.filter(Component)»
+		«IF component.type instanceof SensorType»
+		«FOR property : component.type.properties»
+		def _«component.name»_handler(alarm):
+		   client.publish(topic="«board.name»/«component.name»/«property.name»", msg=«component.name».«property.name»())
+		
+		Timer.Alarm(handler=_«component.name»_handler, s=«generateTimeUnit(component.rate.time, component.rate.timeUnit)», periodic=True)	
+		«ENDFOR»
+		«ENDIF»
+		«ENDFOR»
+	   «ENDFOR»
+	   
+		while True:
+			machine.idle()	
+		'''
 	
-	adc = machine.ADC()             # create an ADC object
-	apin = adc.channel(pin='P16')   # create an analog pin on P16
-	val = apin()
+	def CharSequence generateStatement(Statement statement) '''
+			// Insert statement here
+		'''
 	
-	
-	def sub_cb(topic, msg):
-	   pass
-	   # print(msg)
-	
-	
-	client = MQTTClient(str(«board.name»), server, user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
-	
-	client.connect()
-	
-	count = 0
-	while True:
-	   millivolts = apin.voltage()
-	   degC = (millivolts - 500.0) / 10.0
-	   client.publish(topic="test/feeds/count", msg=str(count))
-	
-	   degC_data = str(degC)
-	   time.sleep(1)
-	
-	
-	   client.publish(topic="test/feeds/temp", msg=degC_data)
-	   count += 1
-	
-	   time.sleep(59)
-	'''
-	
+	def CharSequence generateTimeUnit(int seconds, String timeUnit) {
+			switch timeUnit {
+				case "hours": ""+seconds*3600+""
+				case "minutes": ""+seconds*60+""
+				case "seconds": ""+seconds+""
+			}
+		}
 }
