@@ -1,27 +1,26 @@
 mqtt(host="mndkk.dk", user='iot', pass="3Y5s6JrX", port=1883)
+external float average(float[] nums)
+external integer average(integer[] nums)
 sensortype pycom_lightsensor:
-	external init_lightsensor()
 	property integer lightlevel 
 sensortype thermometer:
-	external init_thermometer(pin_in, pin_out, gnd)
+	initializer (integer pin_in, integer pin_out, integer gnd)
 	property float temp
 actuatortype led:
-	external init_led()
 	property float intensity
 	property string status
 server:
-	host=192.168.0.1
 	port=1234
 board b1:
 	wifi(ssid="MyWifi", pass="12345")
+	thermometer thermometer(16, 7, 4) every 1 minutes
 	lightsensor pycom_lightsensor() every 1 minutes
 	led led()
 board b2:
 	wifi(ssid="MyOtherWifi", pass="54321")
-	thermometer thermometer(16, 7, 4) every 1 minutes
 	lightsensor pycom_lightsensor() every 1 minutes
 	led led()
-every 1 minutes do
+every 1 minutes do:
 	var light_level = average(*.pycom_lightsensor.lightlevel)
 	if light_level > 500 then
 		*.led.intensity = 0%
@@ -30,7 +29,8 @@ every 1 minutes do
 	else
 		*.led.intensity = 100%
 		b1.led.intensity = 50%
-expose turn_on
+
+expose turn_on:
 	*.led.status = "ON" 
-expose turn_off
+expose turn_off:
 	*.led.status = "OFF"
