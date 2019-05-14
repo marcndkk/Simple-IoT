@@ -1,6 +1,7 @@
 mqtt(host="mndkk.dk", user='iot', pass="3Y5s6JrX", port=1883)
 external float average(float[] nums)
 external integer average(integer[] nums)
+var float current_light
 sensortype pycom_lightsensor:
 	property integer lightlevel 
 sensortype thermometer:
@@ -28,8 +29,6 @@ every 1 minutes do:
 		*.led.intensity = 50%
 	else
 		*.led.intensity = 100%
-		b1.led.intensity = 50%
-
 expose turn_on:
 	*.led.status = "ON" 
 expose turn_off:
