@@ -23,6 +23,7 @@ board b2:
 	led led()
 every 1 minutes do:
 	var light_level = average(*.pycom_lightsensor.lightlevel)
+	current_light = light_level
 	if light_level > 500 then
 		*.led.intensity = 0%
 	elseif light_level > 250 then
