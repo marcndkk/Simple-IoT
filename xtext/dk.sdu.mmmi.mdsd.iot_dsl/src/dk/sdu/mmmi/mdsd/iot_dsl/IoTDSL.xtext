@@ -5,11 +5,7 @@ import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 generate ioTDSL "http://www.sdu.dk/mmmi/mdsd/iot_dsl/IoTDSL"
 
 System:
-	mqtt=Mqtt externals+=External* statevariables+=StateDeclaration* componenttypes+=ComponentType* server=Server boards+=Board+ logic+=Logic+ expose+=Expose*
-;
-
-StateDeclaration:
-	'var' type=Type name=ID
+	mqtt=Mqtt externals+=External* statevariables+=VariableDeclaration* componenttypes+=ComponentType* server=Server boards+=Board+ logic+=Logic+ expose+=Expose*
 ;
 
 Mqtt:
@@ -92,11 +88,11 @@ TimeUnit:
 ;
 
 Statement:
-	((Variable | Assignment) ";"?) | If
+	((VariableDeclaration | Assignment) ";"?) | If
 ;
 
-Variable:
-	'var' name=ID '=' exp=Expression
+VariableDeclaration:
+	'var' type=Type? name=ID ('=' exp=Expression)?
 ;
 
 Expression:
@@ -146,7 +142,7 @@ Percentage:
 ;
 
 Reference:
-	ref=[Variable] | PropertyUse
+	ref=[VariableDeclaration] | PropertyUse
 ;
 
 PropertyUse:
@@ -180,7 +176,6 @@ Else:
 Assignment:
 	ref=Reference '=' exp=Expression
 ;
-
 
 Expose:
 	'expose' name=ID ':' BEGIN statements+=Statement+ END
