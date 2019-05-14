@@ -7,20 +7,23 @@ import java.util.Map
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.*
 import java.util.Set
 import static extension org.eclipse.xtext.EcoreUtil2.*
+import java.util.List
 
 class ServerGenerator implements IGenerator{
 	
 	var Map<Loop, String> loopNames
+	var List<VariableDeclaration> stateVariables
 	
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		val system = resource.allContents.filter(System).next
 		loopNames = newLinkedHashMap
+		stateVariables = system.statevariables
 		system.logic.filter(Loop).forEach[loop, i| loopNames.put(loop, "loop"+i)]
 		fsa.generateFile('server/main.go', system.generateServer)
 	}
 	
 	def CharSequence generateServer(System system) '''
-			package main
+			package server
 			
 			import (
 				"fmt"
@@ -32,15 +35,42 @@ class ServerGenerator implements IGenerator{
 				"github.com/gorilla/mux"
 			)
 			
+			type Externals interface {
+				«FOR ext : system.externals»
+				«ext.name»(«FOR param : ext.parameters SEPARATOR ','»«param.name» «IF param.list»[]«ENDIF»«param.type.generateType»«ENDFOR») «ext.type.generateType»
+				«ENDFOR»
+			}
+			
+			func NewServer(externals Externals) *server {
+				«system.mqtt.generateMQTT»
+								
+				return &server{
+					externals,
+					mqtt_client,
+					&state{},
+					«FOR board : system.boards»
+					&board_«board.name»{«FOR component : board.elements.filter(Component)»&«component.type.name»{},«ENDFOR»},
+					«ENDFOR»
+				}
+			}
+			
 			type server struct {
-				client mqtt.Client
+				externals Externals
+				mqtt mqtt.Client
+				state *state
 				«FOR board : system.boards»
 				«board.name» *board_«board.name»
 				«ENDFOR»
 			}
 			
+			type state struct {
+				«FOR variable : system.statevariables»
+				«variable.name» «variable.type.generateType»
+				«ENDFOR»
+			}
+			
 			func (s *server) send_message(topic string, payload interface{}) {
-				token := s.client.Publish(topic, 0, false, payload)
+				token := s.mqtt.Publish(topic, 0, false, payload)
 				token.Wait()
 			}
 			
@@ -60,16 +90,7 @@ class ServerGenerator implements IGenerator{
 			«componentType.generateComponentType»
 			«ENDFOR»
 			
-			func main() {
-				«system.mqtt.generateMQTT»
-				
-				server := server{
-					mqtt_client,
-					«FOR board : system.boards»
-					&board_«board.name»{«FOR component : board.elements.filter(Component)»&«component.type.name»{},«ENDFOR»},
-					«ENDFOR»
-				}
-				
+			func (s *server) main() {
 				«FOR board : system.boards»
 					«FOR component : board.elements.filter(Component)»
 						«IF component.type instanceof SensorType»
@@ -82,44 +103,28 @@ class ServerGenerator implements IGenerator{
 				
 				r := mux.NewRouter()
 				«FOR expose : system.expose»
-				r.HandleFunc("/«expose.name»", server.«expose.name»)
+				r.HandleFunc("/«expose.name»", s.«expose.name»)
 				«ENDFOR»
 				
 				«FOR loop : system.logic.filter(Loop)»
-				go server.«loopNames.get(loop)»()
+				go s.«loopNames.get(loop)»()
 				«ENDFOR»
 				
 				http.ListenAndServe(":«system.server.port»", r)
 			}
-			
-			func float_average(xs []float64) float64 {
-				total := float64(0)
-				for _, x := range xs {
-					total += x
-				}
-				return total / float64(len(xs))
-			}
-			
-			func int_average(xs []int64) int64 {
-				total := int64(0)
-				for _, x := range xs {
-					total += x
-				}
-				return total / int64(len(xs))
-			}
 		'''
 		
 		def CharSequence generatePropertySubscription(Board board, Component component, Property property) '''
-			mqtt_client.Subscribe("«board.name»/«component.name»/«property.name»", 0, func(client mqtt.Client, msg mqtt.Message) {
+			s.mqtt.Subscribe("«board.name»/«component.name»/«property.name»", 0, func(client mqtt.Client, msg mqtt.Message) {
 				«IF property.type.equals("string")»
 				value := string(msg.Payload())
-				server.«board.name».«component.name».«property.name» = value
+				s.«board.name».«component.name».«property.name» = value
 				«ELSE»
 				value, err := «property.generateStringConversion»
 				if err != nil {
 					fmt.Println(fmt.Errorf("Error on topic %v: %v", msg.Topic(), err))
 				} else {
-					server.«board.name».«component.name».«property.name» = value
+					s.«board.name».«component.name».«property.name» = value
 				}
 				«ENDIF»
 				
@@ -167,7 +172,7 @@ class ServerGenerator implements IGenerator{
 		
 		def CharSequence generateStatement(Statement statement) {
 			switch statement {
-				Variable: '''«statement.name» := «statement.exp.generateExp»'''
+				VariableDeclaration: '''«statement.name» := «statement.exp.generateExp»'''
 				Assignment: statement.generateAssignment
 				If: '''
 				if «statement.condition.generateExp» {
@@ -204,7 +209,7 @@ class ServerGenerator implements IGenerator{
 					«ENDFOR»'''
 				}
 			}
-			Reference: '''«assignment.ref.ref.name» = «assignment.exp.generateExp»'''
+			Reference: '''«assignment.ref.generateReference» = «assignment.exp.generateExp»'''
 		}
 	}
 		
@@ -215,10 +220,10 @@ class ServerGenerator implements IGenerator{
 				Mult: '''«exp.left.generateExp» * «exp.right.generateExp»'''
 				Div: '''«exp.left.generateExp» / «exp.right.generateExp»'''
 				Text: '''"«exp.value»"'''
-				Average: exp.generateAverage
+				ExternalUse: exp.generateExternalUse
 				Percentage: '''«exp.value / 100.0»'''
 				PropertyUse: exp.generatePropertyUse
-				Reference: exp.ref.name
+				Reference: exp.generateReference
 				Number: exp.value.toString
 				Boolean: exp.value
 				FloatNumber: exp.value.toString
@@ -229,15 +234,19 @@ class ServerGenerator implements IGenerator{
 			}
 		}
 	
-		def CharSequence generateAverage(Average avg) {
-			if (avg.ref.property.type == "integer") {return '''int_average(«avg.ref.generatePropertyUse»)'''}
-			else if (avg.ref.property.type == "float") {return '''float_average(«avg.ref.generatePropertyUse»)'''}
-
-		} 
+		def CharSequence generateReference(Reference ref) {
+			if(stateVariables.contains(ref.ref))
+				'''s.state.«ref.ref.name»'''
+			else
+				ref.ref.name
+		}
+	
+		def CharSequence generateExternalUse(ExternalUse use)
+			'''s.externals.«use.ref.name»(«FOR arg : use.args SEPARATOR ','»«arg.generateExp»«ENDFOR»)'''
 			
 		def CharSequence generatePropertyUse(PropertyUse use) {
 			if (use.board === null) {
-				'''[]«use.property.type.generatePropertyType»{«use.generatePropertyList»}'''
+				'''[]«use.property.type.generateType»{«use.generatePropertyList»}'''
 			} else {
 				'''s.«use.board.name».«use.component.name».«use.property.name»'''
 			}
@@ -283,12 +292,12 @@ class ServerGenerator implements IGenerator{
 		def CharSequence generateComponentType(ComponentType type) '''
 			type «type.name» struct {
 				«FOR property : type.properties»
-				«property.name» «property.type.generatePropertyType»
+				«property.name» «property.type.generateType»
 				«ENDFOR»
 			}
 		'''
 		
-		def CharSequence generatePropertyType(String type) {
+		def CharSequence generateType(String type) {
 			switch type {
 				case "string": "string"
 				case "integer": "int64"
