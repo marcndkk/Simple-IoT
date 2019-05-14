@@ -12,24 +12,12 @@ Mqtt:
 	'mqtt' '(' 'host' '=' host=(STRING | IP) ',' 'user' '=' user=STRING ',' 'pass' '=' pass=STRING ',' 'port' '=' port=INT ')'
 ;
 
-ComponentType:
-	({SensorType} 'sensortype' | {ActuatorType} 'actuatortype') name=ID ":" BEGIN initializer=Initializer? properties+=Property* END
-;
-
-Property:
-	"property" type=Type name=ID
-;
-
-Type:
-	"string" | "integer" | "float" | "boolean"
-;
-
 External:
 	"external" type=Type name=ID '(' parameters+=Parameter? (',' parameters+=Parameter)* ')'
 ;
 
-Initializer:
-	"initializer" '(' parameters+=Parameter? (',' parameters+=Parameter)* ')'
+Type:
+	"string" | "integer" | "float" | "boolean"
 ;
 
 Parameter:
@@ -38,6 +26,22 @@ Parameter:
 
 List:
 	'[' ']'
+;
+
+VariableDeclaration:
+	'var' type=Type? name=ID ('=' exp=Expression)?
+;
+
+ComponentType:
+	({SensorType} 'sensortype' | {ActuatorType} 'actuatortype') name=ID ":" BEGIN initializer=ComponentInitializer? properties+=Property* END
+;
+
+ComponentInitializer:
+	{ComponentInitializer} "initializer" '(' parameters+=Parameter? (',' parameters+=Parameter)* ')'
+;
+
+Property:
+	"property" type=Type name=ID
 ;
 
 Server:
@@ -67,12 +71,16 @@ Component:
 	name=ID type=[ComponentType] '(' args+=Argument? (',' args+=Argument)* ')' rate=Rate?
 ;
 
+Argument:
+	STRING | INT
+;
+
 Rate:
 	'every' time=INT timeUnit=TimeUnit
 ;
 
-Argument:
-	STRING | INT
+TimeUnit:
+	'hours' | 'minutes' | 'seconds'
 ;
 
 Logic:
@@ -83,16 +91,32 @@ Loop:
 	'every' time=INT timeunit=TimeUnit 'do' ':' BEGIN statements+=Statement+ END
 ;
 
-TimeUnit:
-	'hours' | 'minutes' | 'seconds'
-;
-
 Statement:
 	((VariableDeclaration | Assignment) ";"?) | If
 ;
 
-VariableDeclaration:
-	'var' type=Type? name=ID ('=' exp=Expression)?
+Assignment:
+	ref=Reference '=' exp=Expression
+;
+
+Reference:
+	ref=[VariableDeclaration] | PropertyUse
+;
+
+PropertyUse:
+	((board=[Board] '.' component=[Component])| ('*' '.' componenttype=[ComponentType])) '.' property=[Property]
+;
+
+If:
+	'if' condition=Expression 'then' BEGIN statements+=Statement+  END elseifs+=ElseIf* else=Else?
+;
+
+ElseIf:
+	'elseif' condition=Expression 'then' BEGIN statements+=Statement+ END
+;
+
+Else:
+	'else' BEGIN statements+=Statement+ END
 ;
 
 Expression:
@@ -125,30 +149,6 @@ Primary returns Expression:
 	Reference | Number | Text | ExternalUse | Percentage | FloatNumber | Boolean
 ;
 
-Boolean:
-	value=('true' | 'false')
-;
-
-FloatNumber:
-	value=FLOAT
-;
-
-FLOAT returns ecore::EFloat:
-	INT '.' INT
-;
-
-Percentage:
-	value=INT '%'
-;
-
-Reference:
-	ref=[VariableDeclaration] | PropertyUse
-;
-
-PropertyUse:
-	((board=[Board] '.' component=[Component])| ('*' '.' componenttype=[ComponentType])) '.' property=[Property]
-;
-
 Number:
 	value=INT
 ;
@@ -161,20 +161,20 @@ ExternalUse:
 	ref=[External] '(' args+=Expression? (',' args+=Expression)* ')'
 ;
 
-If:
-	'if' condition=Expression 'then' BEGIN statements+=Statement+  END elseifs+=ElseIf* else=Else?
+Percentage:
+	value=INT '%'
 ;
 
-ElseIf:
-	'elseif' condition=Expression 'then' BEGIN statements+=Statement+ END
+FloatNumber:
+	value=FLOAT
 ;
 
-Else:
-	'else' BEGIN statements+=Statement+ END
+FLOAT returns ecore::EFloat:
+	INT '.' INT
 ;
 
-Assignment:
-	ref=Reference '=' exp=Expression
+Boolean:
+	value=('true' | 'false')
 ;
 
 Expose:
