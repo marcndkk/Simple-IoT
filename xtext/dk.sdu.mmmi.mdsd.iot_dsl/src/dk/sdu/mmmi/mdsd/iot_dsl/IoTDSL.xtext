@@ -5,7 +5,11 @@ import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 generate ioTDSL "http://www.sdu.dk/mmmi/mdsd/iot_dsl/IoTDSL"
 
 System:
-	mqtt=Mqtt componenttypes+=ComponentType* server=Server boards+=Board+ logic+=Logic+ expose+=Expose*
+	mqtt=Mqtt externals+=External* statevariables+=StateDeclaration* componenttypes+=ComponentType* server=Server boards+=Board+ logic+=Logic+ expose+=Expose*
+;
+
+StateDeclaration:
+	'var' type=Type name=ID
 ;
 
 Mqtt:
@@ -13,31 +17,35 @@ Mqtt:
 ;
 
 ComponentType:
-	({SensorType} 'sensortype' | {ActuatorType} 'actuatortype') name=ID ":" BEGIN external=External? properties+=Property* END
+	({SensorType} 'sensortype' | {ActuatorType} 'actuatortype') name=ID ":" BEGIN initializer=Initializer? properties+=Property* END
 ;
 
 Property:
-	"property" type=PropertyType name=ID
+	"property" type=Type name=ID
 ;
 
-PropertyType:
+Type:
 	"string" | "integer" | "float" | "boolean"
 ;
 
 External:
-	"external" name=ID '(' parameters+=Parameter? (',' parameters+=Parameter)* ')'
+	"external" type=Type name=ID '(' parameters+=Parameter? (',' parameters+=Parameter)* ')'
+;
+
+Initializer:
+	"initializer" '(' parameters+=Parameter? (',' parameters+=Parameter)* ')'
 ;
 
 Parameter:
-	name=ID
+	type=Type list?=List? name=ID
+;
+
+List:
+	'[' ']'
 ;
 
 Server:
-	'server' ':' BEGIN 'host' '=' host=Host 'port' '=' port=INT END
-;
-
-Host:
-	STRING | IP
+	'server' ':' BEGIN 'port' '=' port=INT END
 ;
 
 IP:
@@ -76,7 +84,7 @@ Logic:
 ;
 
 Loop:
-	'every' time=INT timeunit=TimeUnit 'do' BEGIN statements+=Statement+ END
+	'every' time=INT timeunit=TimeUnit 'do' ':' BEGIN statements+=Statement+ END
 ;
 
 TimeUnit:
@@ -118,7 +126,7 @@ Factor returns Expression:
 ;
 
 Primary returns Expression:
-	Reference | Number | Text | Average | Percentage | FloatNumber | Boolean
+	Reference | Number | Text | ExternalUse | Percentage | FloatNumber | Boolean
 ;
 
 Boolean:
@@ -153,8 +161,8 @@ Text:
 	value=STRING
 ;
 
-Average:
-	'average' '(' ref=PropertyUse ')'
+ExternalUse:
+	ref=[External] '(' args+=Expression? (',' args+=Expression)* ')'
 ;
 
 If:
@@ -175,7 +183,7 @@ Assignment:
 
 
 Expose:
-	'expose' name=ID BEGIN statements+=Statement+ END
+	'expose' name=ID ':' BEGIN statements+=Statement+ END
 ;
 
 terminal BEGIN: 'synthetic:BEGIN';
