@@ -21,26 +21,9 @@ class ClientGenerator implements IGenerator{
 		for(board : system.boards){
 			fsa.generateFile('client_'+board.name+'/boot.py', system.generateClientBoot(board))
 			fsa.generateFile('client_'+board.name+'/core.py', system.generateClientMain(board))
-			fsa.generateFile('client_'+board.name+'/components.py', system.generateClientComponents(board))
 		}
 
 	}
-	
-	def CharSequence generateClientComponents(System system, Board board)'''
-	from abc import ABC, abstractmethod
-	«FOR component : board.elements.filter(Component)»
-	class «component.type.name»(ABC):
-	
-		def «component.type.external.name»(self):
-			pass
-		
-		«FOR property : component.type.properties»
-		def «property.name»(self):
-			pass
-			
-		«ENDFOR»
-	«ENDFOR»
-	'''
 	
 	def CharSequence generateClientBoot(System system, Board board) '''
 	from network import WLAN
