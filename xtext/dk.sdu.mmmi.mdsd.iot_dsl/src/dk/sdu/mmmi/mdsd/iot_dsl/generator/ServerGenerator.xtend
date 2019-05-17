@@ -1,13 +1,43 @@
 package dk.sdu.mmmi.mdsd.iot_dsl.generator
 
-import org.eclipse.xtext.generator.IGenerator
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.And
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Assignment
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Boolean
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Comparison
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ComponentType
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Div
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Equality
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expose
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expression
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ExternalUse
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.FloatNumber
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.If
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Loop
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Minus
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mqtt
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mult
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Number
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Or
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Percentage
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Plus
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Property
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Reference
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Statement
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Text
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.VariableDeclaration
+import java.util.List
+import java.util.Map
+import java.util.Set
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
-import java.util.Map
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.*
-import java.util.Set
+import org.eclipse.xtext.generator.IGenerator
+
 import static extension org.eclipse.xtext.EcoreUtil2.*
-import java.util.List
 
 class ServerGenerator implements IGenerator{
 	
