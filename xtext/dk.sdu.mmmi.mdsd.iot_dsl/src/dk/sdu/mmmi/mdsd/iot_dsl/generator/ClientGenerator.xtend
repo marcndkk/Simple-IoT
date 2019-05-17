@@ -15,45 +15,41 @@ import org.eclipse.xtext.generator.IGenerator
 
 class ClientGenerator implements IGenerator{
 	
-	
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		val system = resource.allContents.filter(System).next
 		for(board : system.boards){
 			fsa.generateFile('board_'+board.name+'/boot.py', system.generateBootFile(board))
 			fsa.generateFile('board_'+board.name+'/board.py', system.generateBoardFile(board))
 		}
-
 	}
 	
-	def CharSequence generateBootFile(System system, Board board) '''
-	from network import WLAN
-	import machine
-	import pycom
-	import time
-	wlan = WLAN(mode=WLAN.STA)
-	
-	nets = wlan.scan()
-	for net in nets:
-	«FOR wifi : board.elements.filter(WiFi)»
-	    if net.ssid == '«wifi.ssid»':
-	        print('Network found!')
-	        wlan.connect(net.ssid, auth=(net.sec, '«wifi.pass»'), timeout=5000)
-    «ENDFOR»
-	        while not wlan.isconnected():
-	            machine.idle() # save power while waiting
-	        print('WLAN connection succeeded!')
-	        pycom.heartbeat(False)
-	        pycom.rgbled(0x0000FF)
-	        time.sleep(5)
-	        pycom.rgbled(0x000000)
-	        machine.main("main.py")
-	        break
-	
-	'''
-	
-	def CharSequence generatePropertySubscription(Board board, Component component, Property property) '''
-			client.subscribe("«board.name»/«component.name»/«property.name»)
+	def CharSequence generateBootFile(System system, Board board) {
+		var wifi = board.elements.filter(WiFi).get(0)
 		'''
+		from network import WLAN
+		import machine
+		import pycom
+		import time
+
+		pycom.heartbeat(False)
+		wlan = WLAN(mode=WLAN.STA)
+
+		access_points = wlan.scan()
+		for ap in access_points:
+			if ap.ssid == '«wifi.ssid»':
+				wlan.connect(ap.ssid, auth=(ap.sec, '«wifi.pass»'))
+				while not wlan.isconnected():
+					machine.idle() # save power while waiting
+
+				# 5 second blue flash to show successful connection
+				pycom.rgbled(0x0000FF)
+				time.sleep(5)
+				pycom.rgbled(0x000000)
+
+				machine.main("main.py")
+				break
+		'''
+	}
 	
 	def CharSequence generateBoardFile(System system, Board board) '''
 	from mqtt import MQTTClient
