@@ -57,66 +57,107 @@ class ClientGenerator implements IGenerator{
 	from machine import Timer
 	import time
 	
-	class Core:
-		def __init__(self, «FOR comp : board.elements.filter(Component) SEPARATOR ","»«comp.name»«ENDFOR»):
-			«FOR component : board.elements.filter(Component)»
-			self.«component.name» = «component.name»
+	class Board:
+		def __init__(self, components):
+			«FOR component : board.components»
+			self.«component.name» = components["«component.type.name»"](«FOR arg : component.args SEPARATOR ", "»«arg»«ENDFOR»)
 			«ENDFOR»
-			self.client = MQTTClient("«board.name»", "«system.mqtt.host»", user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
-			
-		def sub_cb(self, topic, msg):
-			topic_str = topic.decode("utf-8")
-			msg_str = msg.decode("utf-8")
-			«FOR component : board.elements.filter(Component)»
-			«IF component.type instanceof ActuatorType»
-			«FOR property : component.type.properties»
-			if topic_str == "«board.name»/«component.name»/«property.name»":
-				self.«component.name».«property.name»(msg_str)
-			«ENDFOR»
-			«ENDIF»
-			«ENDFOR»
-			
+			self.validate_components()
+			self.mqtt = MQTTClient("«board.name»", "«system.mqtt.host»", user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
+
+		«generateComponentValidation(board)»
+
+		«generateMessageProcessing(board)»
+
+		«FOR sensor : board.sensors SEPARATOR "\n"»
+		«FOR property : sensor.type.properties SEPARATOR "\n"»
+		«generatePropertyPublishing(board.name, sensor.name, property.name)»
+		«ENDFOR»
+		«ENDFOR»
+
 		def run(self):
-			self.client.set_callback(self.sub_cb)
-			self.client.connect()
-			«FOR component : board.elements.filter(Component)»
-			«IF component.type instanceof ActuatorType»
-			«FOR property : component.type.properties»
-			self.client.subscribe("«board.name»/«component.name»/«property.name»")
+			self.mqtt.set_callback(self.process_message)
+			self.mqtt.connect()
+
+			«FOR actuator : board.actuators»
+			«FOR property : actuator.type.properties»
+			self.mqtt.subscribe("«board.name»/«actuator.name»/«property.name»")
 			«ENDFOR»
-			«ENDIF»
 			«ENDFOR»
-			«FOR logic : system.logic.filter(Loop)»
-			
-			«FOR component : board.elements.filter(Component)»
-			«IF component.type instanceof SensorType»
-			«FOR property : component.type.properties»
-			def _«component.name»_handler(self, alarm):
-			   self.client.publish(topic="«board.name»/«component.name»/«property.name»", msg=self.«component.name».«property.name»())
-			
-			alarm = Timer.Alarm(handler=_«component.name»_handler, s=«generateTimeUnit(component.rate.time, component.rate.timeUnit)», periodic=True)	
+
+			alarms = []
+			«FOR sensor : board.sensors»
+			«FOR property : sensor.type.properties»
+			alarms.append(Timer.Alarm(handler=self.publish_«sensor.name»_«property.name», s=«generateTimeUnit(sensor.rate.time, sensor.rate.timeUnit)», periodic=True))
 			«ENDFOR»
-			«ENDIF»
 			«ENDFOR»
-		   «ENDFOR»
+
 			try:
 				while True:
-					self.client.wait_msg()
+					self.mqtt.wait_msg()
 					machine.idle()
 			finally:
-				alarm.cancel()
-				self.client.disconnect()	
-		'''
+				for alarm in alarms:
+					alarm.cancel()
+				self.mqtt.disconnect()'''
 	
-	def CharSequence generateStatement(Statement statement) '''
-			// Insert statement here
-		'''
-	
-	def CharSequence generateTimeUnit(int seconds, String timeUnit) {
-			switch timeUnit {
-				case "hours": ""+seconds*3600+""
-				case "minutes": ""+seconds*60+""
-				case "seconds": ""+seconds+""
-			}
+	def CharSequence generateComponentValidation(Board board) '''
+		def validate_components(self):
+			«FOR component : board.components SEPARATOR "\n"»
+			«FOR property : component.type.properties SEPARATOR "\n"»
+			«IF component.type instanceof SensorType»
+			«generateComponentMethodCheck(component.name, "get_" + property.name)»
+			«ELSE»
+			«generateComponentMethodCheck(component.name, "set_" + property.name)»
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+	'''
+
+	def CharSequence generateComponentMethodCheck(String componentName, String methodName) '''
+	«methodName» = getattr(self.«componentName», "«methodName»", None)
+	if «methodName» is None or not callable(«methodName»):
+		raise Exception("«componentName» missing method «methodName»")
+	'''
+
+	def CharSequence generateMessageProcessing(Board board) '''
+	def process_message(self, topic, msg):
+		topic_str = topic.decode("utf-8")
+		msg_str = msg.decode("utf-8")
+		«FOR actuator : board.actuators»
+		«FOR property : actuator.type.properties»
+		if topic_str == "«board.name»/«actuator.name»/«property.name»":
+			self.«actuator.name».set_«property.name»(msg_str)
+		«ENDFOR»
+		«ENDFOR»
+	'''
+
+	def CharSequence generatePropertyPublishing(String boardName, String componentName, String propertyName) '''
+	def publish_«componentName»_«propertyName»(self):
+		self.mqtt.publish(topic="«boardName»/«componentName»/«propertyName»", msg=self.«componentName».get_«propertyName»())
+	'''
+
+	def CharSequence generateTimeUnit(int time, String timeUnit) {
+		switch timeUnit {
+			case "hours": '''«time*3600»'''
+			case "minutes": '''«time*60»'''
+			case "seconds": '''«time»'''
 		}
+	}
+
+	def Iterable<Component> getSensors(Board board) {
+		val sensors = newArrayList
+		board.components.forEach[c| if(c.type instanceof SensorType) sensors.add(c)]
+		sensors
+	}
+
+	def Iterable<Component> getActuators(Board board) {
+		val actuators = newArrayList
+		board.components.forEach[c| if(c.type instanceof ActuatorType) actuators.add(c)]
+		actuators
+	}
+
+	def Iterable<Component> getComponents(Board board) {
+		board.elements.filter(Component)
+	}
 }
