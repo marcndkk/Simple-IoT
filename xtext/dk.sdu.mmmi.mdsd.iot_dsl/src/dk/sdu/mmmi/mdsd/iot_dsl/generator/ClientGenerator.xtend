@@ -19,13 +19,13 @@ class ClientGenerator implements IGenerator{
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		val system = resource.allContents.filter(System).next
 		for(board : system.boards){
-			fsa.generateFile('client_'+board.name+'/boot.py', system.generateClientBoot(board))
-			fsa.generateFile('client_'+board.name+'/core.py', system.generateClientMain(board))
+			fsa.generateFile('board_'+board.name+'/boot.py', system.generateBootFile(board))
+			fsa.generateFile('board_'+board.name+'/board.py', system.generateBoardFile(board))
 		}
 
 	}
 	
-	def CharSequence generateClientBoot(System system, Board board) '''
+	def CharSequence generateBootFile(System system, Board board) '''
 	from network import WLAN
 	import machine
 	import pycom
@@ -55,7 +55,7 @@ class ClientGenerator implements IGenerator{
 			client.subscribe("«board.name»/«component.name»/«property.name»)
 		'''
 	
-	def CharSequence generateClientMain(System system, Board board) '''
+	def CharSequence generateBoardFile(System system, Board board) '''
 	from mqtt import MQTTClient
 	import machine
 	from machine import Timer
