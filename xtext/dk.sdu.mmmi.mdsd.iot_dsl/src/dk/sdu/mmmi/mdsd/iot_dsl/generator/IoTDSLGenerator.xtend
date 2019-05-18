@@ -8,6 +8,8 @@ import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
 import com.google.inject.Inject
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Server
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
 
 /**
  * Generates code from your model files on save.
@@ -18,8 +20,12 @@ class IoTDSLGenerator extends AbstractGenerator {
 	@Inject ServerGenerator serverGen
 	@Inject ClientGenerator clientGen
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-		serverGen.doGenerate(resource, fsa)
-		clientGen.doGenerate(resource, fsa)
+		if(resource.allContents.filter(Server).size() > 0) {
+			serverGen.doGenerate(resource, fsa)
+		}
+		if(resource.allContents.filter(Board).size() > 0) {
+			clientGen.doGenerate(resource, fsa)
+		}
 	}
 	
 }
