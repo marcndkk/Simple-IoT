@@ -124,10 +124,19 @@ class ClientGenerator implements IGenerator{
 		«FOR actuator : board.actuators»
 		«FOR property : actuator.type.properties»
 		if topic_str == "«board.name»/«actuator.name»/«property.name»":
-			self.«actuator.name».set_«property.name»(msg_str)
+			self.«actuator.name».set_«property.name»(«property.type.generateMsgConversion»)
 		«ENDFOR»
 		«ENDFOR»
 	'''
+	
+	def CharSequence generateMsgConversion(String type) {
+		switch type {
+			case "string": "msg_str"
+			case "integer": "int(msg_str)"
+			case "float": "float(msg_str)"
+			case "boolean": "bool(msg_str)"
+		}
+	}
 
 	def CharSequence generatePropertyPublishing(String boardName, String componentName, String propertyName) '''
 	def publish_«componentName»_«propertyName»(self):
