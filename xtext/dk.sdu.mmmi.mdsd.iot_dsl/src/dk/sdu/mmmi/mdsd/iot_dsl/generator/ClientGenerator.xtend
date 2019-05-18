@@ -3,10 +3,7 @@ package dk.sdu.mmmi.mdsd.iot_dsl.generator
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ActuatorType
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Loop
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Property
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Statement
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
 import org.eclipse.emf.ecore.resource.Resource
