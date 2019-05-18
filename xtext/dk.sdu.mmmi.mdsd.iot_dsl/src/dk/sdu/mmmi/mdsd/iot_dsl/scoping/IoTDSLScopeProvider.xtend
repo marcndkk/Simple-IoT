@@ -11,7 +11,8 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
 import org.eclipse.xtext.scoping.Scopes
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
-
+import com.google.inject.Inject
+import dk.sdu.mmmi.mdsd.iot_dsl.IoTDSLModelUtil
 
 /**
  * This class contains custom scoping description.
@@ -20,6 +21,9 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
  * on how and when to use it.
  */
 class IoTDSLScopeProvider extends AbstractIoTDSLScopeProvider {
+	
+	@Inject extension IoTDSLModelUtil
+	
 	override getScope(EObject context, EReference reference) {
 		if (reference == Literals.PROPERTY_USE__COMPONENT) {
 			val propertyUse = context.getContainerOfType(PropertyUse)
@@ -36,7 +40,7 @@ class IoTDSLScopeProvider extends AbstractIoTDSLScopeProvider {
 			}
 		} else if (reference == Literals.PROPERTY_USE__COMPONENTTYPE) {
 			var program = context.getContainerOfType(Program)
-			return Scopes.scopeFor(program.componenttypes);
+			return Scopes.scopeFor(program.componentTypes);
 		}
 		return super.getScope(context, reference)
 	}

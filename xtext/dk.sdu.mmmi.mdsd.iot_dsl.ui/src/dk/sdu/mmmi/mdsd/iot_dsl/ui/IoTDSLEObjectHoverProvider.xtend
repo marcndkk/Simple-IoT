@@ -10,8 +10,12 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ActuatorType
+import com.google.inject.Inject
+import dk.sdu.mmmi.mdsd.iot_dsl.IoTDSLModelUtil
 
 class IoTDSLEObjectHoverProvider extends DefaultEObjectHoverProvider{
+	
+	@Inject extension IoTDSLModelUtil
 	
 	override protected getHoverInfoAsHtml(EObject o) {
 		if(o instanceof ComponentType && o.programHasNoError) {

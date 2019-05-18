@@ -9,8 +9,12 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
+import com.google.inject.Inject
+import dk.sdu.mmmi.mdsd.iot_dsl.IoTDSLModelUtil
 
 class ClientGenerator implements IGenerator{
+	
+	@Inject extension IoTDSLModelUtil
 	
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		val program = resource.allContents.filter(Program).next

@@ -38,8 +38,12 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 
 import static extension org.eclipse.xtext.EcoreUtil2.*
+import com.google.inject.Inject
+import dk.sdu.mmmi.mdsd.iot_dsl.IoTDSLModelUtil
 
 class ServerGenerator implements IGenerator{
+	
+	@Inject extension IoTDSLModelUtil
 	
 	var Map<Loop, String> loopNames
 	var List<VariableDeclaration> stateVariables
@@ -47,8 +51,8 @@ class ServerGenerator implements IGenerator{
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		val program = resource.allContents.filter(Program).next
 		loopNames = newLinkedHashMap
-		stateVariables = program.statevariables
-		program.logic.filter(Loop).forEach[loop, i| loopNames.put(loop, "loop"+i)]
+		stateVariables = program.stateVariables.toList
+		program.loops.forEach[loop, i| loopNames.put(loop, "loop"+i)]
 		fsa.generateFile('server/server.go', program.generateServer)
 	}
 	
@@ -94,7 +98,7 @@ class ServerGenerator implements IGenerator{
 			}
 			
 			type state struct {
-				«FOR variable : program.statevariables»
+				«FOR variable : program.stateVariables»
 				«variable.name» «variable.type.generateType»
 				«ENDFOR»
 			}
@@ -104,11 +108,11 @@ class ServerGenerator implements IGenerator{
 				token.Wait()
 			}
 			
-			«FOR loop : program.logic.filter(Loop)»
+			«FOR loop : program.loops»
 			«loop.generateLoopFunction»
 			«ENDFOR»
 			
-			«FOR expose : program.expose»
+			«FOR expose : program.exposes»
 			«expose.generateExpose»
 			«ENDFOR»
 			
@@ -132,11 +136,11 @@ class ServerGenerator implements IGenerator{
 				«ENDFOR»
 				
 				r := mux.NewRouter()
-				«FOR expose : program.expose»
+				«FOR expose : program.exposes»
 				r.HandleFunc("/«expose.name»", s.«expose.name»)
 				«ENDFOR»
 				
-				«FOR loop : program.logic.filter(Loop)»
+				«FOR loop : program.loops»
 				go s.«loopNames.get(loop)»()
 				«ENDFOR»
 				
