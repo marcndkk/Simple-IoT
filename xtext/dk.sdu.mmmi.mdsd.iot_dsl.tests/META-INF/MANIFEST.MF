@@ -11,5 +11,5 @@ Require-Bundle: dk.sdu.mmmi.mdsd.iot_dsl,
  org.eclipse.xtext.testing,
  org.eclipse.xtext.xbase.testing,
  org.eclipse.xtext.xbase.lib;bundle-version="2.14.0"
-Bundle-RequiredExecutionEnvironment: JavaSE-10
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: dk.sdu.mmmi.mdsd.iot_dsl.tests;x-internal=true

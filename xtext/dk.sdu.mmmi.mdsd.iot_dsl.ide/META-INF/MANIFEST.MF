@@ -10,7 +10,8 @@ Require-Bundle: dk.sdu.mmmi.mdsd.iot_dsl,
  org.eclipse.xtext.ide,
  org.eclipse.xtext.xbase.ide,
  org.antlr.runtime;bundle-version="[3.2.0,3.2.1)"
-Bundle-RequiredExecutionEnvironment: JavaSE-10
-Export-Package: dk.sdu.mmmi.mdsd.iot_dsl.ide.contentassist.antlr,
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: dk.sdu.mmmi.mdsd.iot_dsl.ide,
+ dk.sdu.mmmi.mdsd.iot_dsl.ide.contentassist.antlr,
  dk.sdu.mmmi.mdsd.iot_dsl.ide.contentassist.antlr.internal,
  dk.sdu.mmmi.mdsd.iot_dsl.ide.contentassist.antlr.lexer
