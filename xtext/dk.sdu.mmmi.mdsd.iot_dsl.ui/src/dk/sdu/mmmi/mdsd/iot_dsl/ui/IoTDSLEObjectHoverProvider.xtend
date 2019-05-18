@@ -5,7 +5,6 @@ import static extension org.eclipse.xtext.EcoreUtil2.*
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.Diagnostician
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ComponentType
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
