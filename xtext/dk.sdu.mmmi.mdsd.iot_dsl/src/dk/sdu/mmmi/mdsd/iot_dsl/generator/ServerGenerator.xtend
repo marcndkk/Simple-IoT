@@ -49,11 +49,11 @@ class ServerGenerator implements IGenerator{
 		loopNames = newLinkedHashMap
 		stateVariables = system.statevariables
 		system.logic.filter(Loop).forEach[loop, i| loopNames.put(loop, "loop"+i)]
-		fsa.generateFile('server/main.go', system.generateServer)
+		fsa.generateFile('server/server.go', system.generateServer)
 	}
 	
 	def CharSequence generateServer(System system) '''
-			package server
+			package main
 			
 			import (
 				"fmt"
@@ -120,7 +120,7 @@ class ServerGenerator implements IGenerator{
 			«componentType.generateComponentType»
 			«ENDFOR»
 			
-			func (s *server) main() {
+			func (s *server) run() {
 				«FOR board : system.boards»
 					«FOR component : board.elements.filter(Component)»
 						«IF component.type instanceof SensorType»
