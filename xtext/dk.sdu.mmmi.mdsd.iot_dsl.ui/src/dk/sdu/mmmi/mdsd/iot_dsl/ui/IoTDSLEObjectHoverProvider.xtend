@@ -6,7 +6,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.Diagnostician
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ComponentType
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ActuatorType
@@ -23,7 +23,7 @@ class IoTDSLEObjectHoverProvider extends DefaultEObjectHoverProvider{
 					SensorType
 					«ENDIF»
 					<b>«(o as ComponentType).name»</b>
-					«FOR b : o.getContainerOfType(System).boards»
+					«FOR b : o.getContainerOfType(Program).boards»
 					«b.getComponentsOfType(o as ComponentType)»
 					«ENDFOR»
 					</p>

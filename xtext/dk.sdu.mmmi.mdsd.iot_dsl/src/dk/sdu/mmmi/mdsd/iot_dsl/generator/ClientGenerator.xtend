@@ -4,7 +4,7 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ActuatorType
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
@@ -13,14 +13,14 @@ import org.eclipse.xtext.generator.IGenerator
 class ClientGenerator implements IGenerator{
 	
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
-		val system = resource.allContents.filter(System).next
-		for(board : system.boards){
-			fsa.generateFile('board_'+board.name+'/boot.py', system.generateBootFile(board))
-			fsa.generateFile('board_'+board.name+'/board.py', system.generateBoardFile(board))
+		val program = resource.allContents.filter(Program).next
+		for(board : program.boards){
+			fsa.generateFile('board_'+board.name+'/boot.py', program.generateBootFile(board))
+			fsa.generateFile('board_'+board.name+'/board.py', program.generateBoardFile(board))
 		}
 	}
 	
-	def CharSequence generateBootFile(System system, Board board) {
+	def CharSequence generateBootFile(Program program, Board board) {
 		var wifi = board.elements.filter(WiFi).get(0)
 		'''
 		from network import WLAN
@@ -48,7 +48,7 @@ class ClientGenerator implements IGenerator{
 		'''
 	}
 	
-	def CharSequence generateBoardFile(System system, Board board) '''
+	def CharSequence generateBoardFile(Program program, Board board) '''
 	from mqtt import MQTTClient
 	import machine
 	from machine import Timer
@@ -60,7 +60,7 @@ class ClientGenerator implements IGenerator{
 			self.«component.name» = components["«component.type.name»"](«FOR arg : component.args SEPARATOR ", "»«arg»«ENDFOR»)
 			«ENDFOR»
 			self.validate_components()
-			self.mqtt = MQTTClient("«board.name»", "«system.mqtt.host»", user="«system.mqtt.user»", password="«system.mqtt.pass»", port=«system.mqtt.port»)
+			self.mqtt = MQTTClient("«board.name»", "«program.mqtt.host»", user="«program.mqtt.user»", password="«program.mqtt.pass»", port=«program.mqtt.port»)
 
 		«generateComponentValidation(board)»
 

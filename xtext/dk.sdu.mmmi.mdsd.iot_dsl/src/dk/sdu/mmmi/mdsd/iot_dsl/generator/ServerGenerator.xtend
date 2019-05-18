@@ -27,7 +27,7 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Reference
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Statement
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Text
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.VariableDeclaration
 import java.util.List
@@ -45,14 +45,14 @@ class ServerGenerator implements IGenerator{
 	var List<VariableDeclaration> stateVariables
 	
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
-		val system = resource.allContents.filter(System).next
+		val program = resource.allContents.filter(Program).next
 		loopNames = newLinkedHashMap
-		stateVariables = system.statevariables
-		system.logic.filter(Loop).forEach[loop, i| loopNames.put(loop, "loop"+i)]
-		fsa.generateFile('server/server.go', system.generateServer)
+		stateVariables = program.statevariables
+		program.logic.filter(Loop).forEach[loop, i| loopNames.put(loop, "loop"+i)]
+		fsa.generateFile('server/server.go', program.generateServer)
 	}
 	
-	def CharSequence generateServer(System system) '''
+	def CharSequence generateServer(Program program) '''
 			package main
 			
 			import (
@@ -66,19 +66,19 @@ class ServerGenerator implements IGenerator{
 			)
 			
 			type Externals interface {
-				«FOR ext : system.externals»
+				«FOR ext : program.externals»
 				«ext.name»(«FOR param : ext.parameters SEPARATOR ','»«param.name» «IF param.list»[]«ENDIF»«param.type.generateType»«ENDFOR») «ext.type.generateType»
 				«ENDFOR»
 			}
 			
 			func NewServer(externals Externals) *server {
-				«system.mqtt.generateMQTT»
+				«program.mqtt.generateMQTT»
 								
 				return &server{
 					externals,
 					mqtt_client,
 					&state{},
-					«FOR board : system.boards»
+					«FOR board : program.boards»
 					&board_«board.name»{«FOR component : board.elements.filter(Component)»&«component.type.name»{},«ENDFOR»},
 					«ENDFOR»
 				}
@@ -88,13 +88,13 @@ class ServerGenerator implements IGenerator{
 				externals Externals
 				mqtt mqtt.Client
 				state *state
-				«FOR board : system.boards»
+				«FOR board : program.boards»
 				«board.name» *board_«board.name»
 				«ENDFOR»
 			}
 			
 			type state struct {
-				«FOR variable : system.statevariables»
+				«FOR variable : program.statevariables»
 				«variable.name» «variable.type.generateType»
 				«ENDFOR»
 			}
@@ -104,24 +104,24 @@ class ServerGenerator implements IGenerator{
 				token.Wait()
 			}
 			
-			«FOR loop : system.logic.filter(Loop)»
+			«FOR loop : program.logic.filter(Loop)»
 			«loop.generateLoopFunction»
 			«ENDFOR»
 			
-			«FOR expose : system.expose»
+			«FOR expose : program.expose»
 			«expose.generateExpose»
 			«ENDFOR»
 			
-			«FOR board : system.boards»
+			«FOR board : program.boards»
 			«board.generateBoardType»
 			«ENDFOR»
 			
-			«FOR componentType : system.usedComponentTypes»
+			«FOR componentType : program.usedComponentTypes»
 			«componentType.generateComponentType»
 			«ENDFOR»
 			
 			func (s *server) run() {
-				«FOR board : system.boards»
+				«FOR board : program.boards»
 					«FOR component : board.elements.filter(Component)»
 						«IF component.type instanceof SensorType»
 							«FOR property : component.type.properties»
@@ -132,15 +132,15 @@ class ServerGenerator implements IGenerator{
 				«ENDFOR»
 				
 				r := mux.NewRouter()
-				«FOR expose : system.expose»
+				«FOR expose : program.expose»
 				r.HandleFunc("/«expose.name»", s.«expose.name»)
 				«ENDFOR»
 				
-				«FOR loop : system.logic.filter(Loop)»
+				«FOR loop : program.logic.filter(Loop)»
 				go s.«loopNames.get(loop)»()
 				«ENDFOR»
 				
-				http.ListenAndServe(":«system.server.port»", r)
+				http.ListenAndServe(":«program.server.port»", r)
 			}
 		'''
 		
@@ -231,7 +231,7 @@ class ServerGenerator implements IGenerator{
 					s.send_message("«ref.board.name»/«ref.component.name»/«ref.property.name»", fmt.Sprintf("%v", «assignment.exp.generateExp»))'''
 				else {
 					'''
-					«FOR board : ref.getContainerOfType(System).boards»
+					«FOR board : ref.getContainerOfType(Program).boards»
 					«FOR component : board.getComponentsOfType(ref.componenttype)»
 					s.«board.name».«component.name».«ref.property.name» = «assignment.exp.generateExp»
 					s.send_message("«board.name»/«component.name»/«ref.property.name»", fmt.Sprintf("%v", «assignment.exp.generateExp»))
@@ -284,7 +284,7 @@ class ServerGenerator implements IGenerator{
 		
 		def CharSequence generatePropertyList(PropertyUse use) {
 			var list = ""
-			for (Board board : use.getContainerOfType(System).boards) {
+			for (Board board : use.getContainerOfType(Program).boards) {
 				for (Component component : board.getComponentsOfType(use.componenttype)) {
 					list += '''s.«board.name».«component.name».«use.property.name», '''
 				}
@@ -336,9 +336,9 @@ class ServerGenerator implements IGenerator{
 			}
 		}
 		
-		def Set<ComponentType> getUsedComponentTypes(System system) {
+		def Set<ComponentType> getUsedComponentTypes(Program program) {
 			val types = newLinkedHashSet
-			system.boards.forEach[
+			program.boards.forEach[
 				elements.filter(Component).forEach[
 					types.add(type)
 				]

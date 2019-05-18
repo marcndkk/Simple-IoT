@@ -10,7 +10,7 @@ import static extension org.eclipse.xtext.EcoreUtil2.*
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
 import org.eclipse.xtext.scoping.Scopes
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
-import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
 
 
 /**
@@ -35,17 +35,17 @@ class IoTDSLScopeProvider extends AbstractIoTDSLScopeProvider {
 				return Scopes.scopeFor(componenttype.properties)
 			}
 		} else if (reference == Literals.PROPERTY_USE__COMPONENTTYPE) {
-			var system = context.getContainerOfType(System)
-			return Scopes.scopeFor(system.componenttypes);
+			var program = context.getContainerOfType(Program)
+			return Scopes.scopeFor(program.componenttypes);
 		}
 		return super.getScope(context, reference)
 	}
 		
 	def getScopeForAllBoards(EObject context) {
 		
-		var system = context.getContainerOfType(System)
+		var program = context.getContainerOfType(Program)
 		val candidates = newArrayList
-		system.boards.forEach[b| b.elements.filter(Component).forEach[c|candidates.add(c)]]
+		program.boards.forEach[b| b.elements.filter(Component).forEach[c|candidates.add(c)]]
 		return Scopes.scopeFor(candidates)
 	}
 }

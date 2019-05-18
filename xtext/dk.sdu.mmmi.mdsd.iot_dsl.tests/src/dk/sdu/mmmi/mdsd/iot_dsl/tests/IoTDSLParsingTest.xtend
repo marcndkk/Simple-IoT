@@ -15,7 +15,7 @@ import org.junit.jupiter.api.^extension.ExtendWith
 @InjectWith(IoTDSLInjectorProvider)
 class IoTDSLParsingTest {
 	@Inject
-	ParseHelper<dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.System> parseHelper
+	ParseHelper<dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program> parseHelper
 	
 	@Test
 	def void loadModel() {

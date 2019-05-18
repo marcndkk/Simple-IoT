@@ -4,7 +4,7 @@ import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 
 generate ioTDSL "http://www.sdu.dk/mmmi/mdsd/iot_dsl/IoTDSL"
 
-System:
+Program:
 	mqtt=Mqtt externals+=External* statevariables+=VariableDeclaration* componenttypes+=ComponentType* server=Server boards+=Board+ logic+=Logic+ expose+=Expose*
 ;
 
