@@ -38,9 +38,6 @@ class IoTDSLScopeProvider extends AbstractIoTDSLScopeProvider {
 			if(componenttype !== null) {
 				return Scopes.scopeFor(componenttype.properties)
 			}
-		} else if (reference == Literals.PROPERTY_USE__COMPONENTTYPE) {
-			var program = context.getContainerOfType(Program)
-			return Scopes.scopeFor(program.componentTypes);
 		}
 		return super.getScope(context, reference)
 	}
