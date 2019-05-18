@@ -139,8 +139,8 @@ class ClientGenerator implements IGenerator{
 	}
 
 	def CharSequence generatePropertyPublishing(String boardName, String componentName, String propertyName) '''
-	def publish_«componentName»_«propertyName»(self):
-		self.mqtt.publish(topic="«boardName»/«componentName»/«propertyName»", msg=self.«componentName».get_«propertyName»())
+	def publish_«componentName»_«propertyName»(self, alarm):
+		self.mqtt.publish(topic="«boardName»/«componentName»/«propertyName»", msg=str(self.«componentName».get_«propertyName»()))
 	'''
 
 	def CharSequence generateTimeUnit(int time, String timeUnit) {
