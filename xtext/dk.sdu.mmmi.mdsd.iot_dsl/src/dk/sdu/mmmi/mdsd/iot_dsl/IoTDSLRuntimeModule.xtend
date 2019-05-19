@@ -3,9 +3,21 @@
  */
 package dk.sdu.mmmi.mdsd.iot_dsl
 
+import com.google.inject.Binder
+import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
+import dk.sdu.mmmi.mdsd.iot_dsl.scoping.IoTDSLImportedNamespaceAwareLocalScopeProvider
 
 /**
  * Use this class to register components to be used at runtime / without the Equinox extension registry.
  */
 class IoTDSLRuntimeModule extends AbstractIoTDSLRuntimeModule {
+	
+	override configureIScopeProviderDelegate(Binder binder) {
+		binder.bind(org.eclipse.xtext.scoping.IScopeProvider)
+		.annotatedWith(
+			com.google.inject.name.Names
+			.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
+			.to(IoTDSLImportedNamespaceAwareLocalScopeProvider)
+	}
+	
 }

@@ -1,0 +1,8 @@
+actuatortype pycom_led:
+	property float intensity
+	property string status
+sensortype pycom_lightsensor:
+	property integer lightlevel 
+sensortype thermometer:
+	initializer(integer pin_in, integer pin_out)
+	property float temp

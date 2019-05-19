@@ -16,16 +16,17 @@ Require-Bundle: org.eclipse.xtext,
  org.eclipse.xtend.lib;bundle-version="2.14.0",
  org.antlr.runtime;bundle-version="[3.2.0,3.2.1)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Export-Package: dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.util,
- dk.sdu.mmmi.mdsd.iot_dsl.validation,
- dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr.internal,
- dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr,
- dk.sdu.mmmi.mdsd.iot_dsl,
- dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL,
- dk.sdu.mmmi.mdsd.iot_dsl.services,
- dk.sdu.mmmi.mdsd.iot_dsl.scoping,
- dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.impl,
- dk.sdu.mmmi.mdsd.iot_dsl.serializer,
+Export-Package: dk.sdu.mmmi.mdsd.iot_dsl,
  dk.sdu.mmmi.mdsd.iot_dsl.generator,
- dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr.lexer
+ dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL,
+ dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.impl,
+ dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.util,
+ dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr,
+ dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr.internal,
+ dk.sdu.mmmi.mdsd.iot_dsl.parser.antlr.lexer,
+ dk.sdu.mmmi.mdsd.iot_dsl.scoping,
+ dk.sdu.mmmi.mdsd.iot_dsl.serializer,
+ dk.sdu.mmmi.mdsd.iot_dsl.services,
+ dk.sdu.mmmi.mdsd.iot_dsl.validation,
+ pycom
 Import-Package: org.apache.log4j
