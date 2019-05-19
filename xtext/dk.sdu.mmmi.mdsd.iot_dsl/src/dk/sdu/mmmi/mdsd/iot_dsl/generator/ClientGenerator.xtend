@@ -11,6 +11,11 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import com.google.inject.Inject
 import dk.sdu.mmmi.mdsd.iot_dsl.IoTDSLModelUtil
+import java.io.File
+import java.io.FileReader
+import static extension com.google.common.io.CharStreams.*
+import java.io.InputStreamReader
+import com.google.common.reflect.Reflection
 
 class ClientGenerator implements IGenerator{
 	
@@ -19,9 +24,22 @@ class ClientGenerator implements IGenerator{
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		val program = resource.allContents.filter(Program).next
 		for(board : program.boards){
-			fsa.generateFile('board_'+board.name+'/boot.py', program.generateBootFile(board))
-			fsa.generateFile('board_'+board.name+'/board.py', program.generateBoardFile(board))
-		}
+			var dir = 'board_' + board.name + '/'
+			fsa.generateFile(dir + 'boot.py', program.generateBootFile(board))
+			fsa.generateFile(dir + 'board.py', program.generateBoardFile(board))
+			copyExternalFile(fsa, "/pycom/lib/pycom.py", dir + "lib/pycom.py")
+			copyExternalFile(fsa, "/pycom/lib/LTR329ALS01.py", dir + "lib/LTR329ALS01.py")
+			copyExternalFile(fsa, "/pycom/lib/mqtt.py", dir + "lib/mqtt.py")
+	}
+	}
+	
+	def copyExternalFile(IFileSystemAccess fsa, String filename, String target) {
+		var file = getClass.getResourceAsStream(filename)
+		fsa.generateFile(target, '''
+		«FOR line : new InputStreamReader(file).readLines»
+		«line»
+		«ENDFOR»
+		''')
 	}
 	
 	def CharSequence generateBootFile(Program program, Board board) {
