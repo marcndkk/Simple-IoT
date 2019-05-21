@@ -62,8 +62,10 @@ class ServerGenerator implements IGenerator{
 			import (
 				"fmt"
 				"net/http"
-				"strconv"
 				"time"
+				«IF program.numberOfSensors > 0»
+				"strconv"
+				«ENDIF»
 				
 				mqtt "github.com/eclipse/paho.mqtt.golang"
 				"github.com/gorilla/mux"
