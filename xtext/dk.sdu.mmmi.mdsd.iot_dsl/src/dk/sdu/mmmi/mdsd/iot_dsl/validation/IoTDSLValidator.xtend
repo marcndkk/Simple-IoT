@@ -3,23 +3,287 @@
  */
 package dk.sdu.mmmi.mdsd.iot_dsl.validation
 
+import org.eclipse.xtext.validation.Check
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Program
+import dk.sdu.mmmi.mdsd.iot_dsl.scoping.IoTDSLIndex
+import com.google.inject.Inject
+import dk.sdu.mmmi.mdsd.iot_dsl.IoTDSLModelUtil
+import org.eclipse.xtext.naming.IQualifiedNameProvider
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.IoTDSLPackage.Literals
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Board
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Mqtt
+import static extension org.eclipse.xtext.EcoreUtil2.*
+import com.google.common.collect.HashMultimap
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.VariableDeclaration
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.NamedProgramElement
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ComponentType
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Parameter
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.External
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ComponentInitializer
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ProgramElement
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Loop
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expose
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Server
 
 /**
  * This class contains custom validation rules. 
- *
+ * 
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#validation
  */
 class IoTDSLValidator extends AbstractIoTDSLValidator {
-	
-//	public static val INVALID_NAME = 'invalidName'
-//
-//	@Check
-//	def checkGreetingStartsWithCapital(Greeting greeting) {
-//		if (!Character.isUpperCase(greeting.name.charAt(0))) {
-//			warning('Name should start with a capital', 
-//					IoTDSLPackage.Literals.GREETING__NAME,
-//					INVALID_NAME)
-//		}
-//	}
-	
+
+	@Inject extension IoTDSLIndex
+	@Inject extension IoTDSLModelUtil
+	@Inject extension IQualifiedNameProvider
+
+	@Check(NORMAL)
+	def checkDuplicateComponentTypesInFiles(Program p) {
+		val externalComponentTypes = p.visibleExternalComponentTypesDescriptions
+		for (c : p.componentTypes) {
+			var className = c.fullyQualifiedName
+			if (externalComponentTypes.containsKey(className)) {
+				error(
+					"ComponentType " + c.name + " is already defined",
+					c,
+					Literals.NAMED_PROGRAM_ELEMENT__NAME
+				)
+			}
+		}
+	}
+
+	@Check(NORMAL)
+	def checkNoOtherMainFiles(Program p) {
+		if (p.servers.size > 0 || p.boards.size > 0) {
+			val boards = getVisibleExternalDescriptionsForType(p, Literals.BOARD)
+			val servers = getVisibleExternalDescriptionsForType(p, Literals.SERVER)
+
+			if (boards.size > 0 || servers.size > 0) {
+				for (element : p.elements) {
+					if (element instanceof Board || element instanceof Server) {
+						error(
+							"Only one file in a project can contain boards and/or a server",
+							p,
+							Literals.PROGRAM__ELEMENTS,
+							element.position
+						)
+					}
+				}
+			}
+		}
+	}
+
+	@Check
+	def checkMaximumOneMqtt(Program p) {
+		if (p.mqtts.size > 1) {
+			for (var i = 0; i < p.elements.size; i++) {
+				if (p.elements.get(i) instanceof Mqtt)
+					error(
+						"There can be only one MQTT configuration",
+						p,
+						Literals.PROGRAM__ELEMENTS,
+						i
+					)
+			}
+		}
+	}
+
+	@Check
+	def checkMinimumOneMqttInMainFile(Program p) {
+		if (p.mqtts.size < 1 && (p.servers.size > 0 || p.boards.size > 0)) {
+			error(
+				"There must be an MQTT configuration in the main file",
+				p,
+				Literals.PROGRAM__ELEMENTS,
+				-1
+			)
+		}
+	}
+
+	@Check
+	def checkNoLoopsInNonMainFile(Loop l) {
+		checkNoElementsInNonMainFile(l, "Loops")
+	}
+
+	@Check
+	def checkNoExposesInNonMainFile(Expose e) {
+		checkNoElementsInNonMainFile(e, "Exposes")
+	}
+
+	@Check
+	def checkNoExternalsInNonMainFile(External e) {
+		checkNoElementsInNonMainFile(e, "Externals")
+	}
+
+	@Check
+	def checkNoVariablesInNonMainFile(VariableDeclaration v) {
+		checkNoElementsInNonMainFile(v, "Variables")
+	}
+
+	@Check
+	def checkNoMqttInNonMainFile(Mqtt m) {
+		checkNoElementsInNonMainFile(m, "MQTT configuration")
+	}
+
+	def private void checkNoElementsInNonMainFile(ProgramElement e, String desc) {
+		val p = e.getContainerOfType(Program)
+		if (p.servers.size == 0 && p.boards.size == 0) {
+			error(
+				desc + " can only be in the main file",
+				p,
+				Literals.PROGRAM__ELEMENTS,
+				e.position
+			)
+		}
+	}
+
+	@Check
+	def checkWiFiInBoard(Board b) {
+		if (b.wifis.size < 1) {
+			error(
+				"There must be a WiFi configuration in each board",
+				b,
+				Literals.BOARD__ELEMENTS,
+				-1
+			)
+		}
+		if (b.wifis.size > 1) {
+			for (var i = 0; i < b.elements.size; i++) {
+				if (b.elements.get(i) instanceof WiFi)
+					error(
+						"There can only be one WiFi configuration in each board",
+						b,
+						Literals.BOARD__ELEMENTS,
+						i
+					)
+			}
+		}
+	}
+
+	@Check
+	def checkNoDuplicateProperties(ComponentType c) {
+		val multiMap = HashMultimap.create()
+		c.properties.forEach[multiMap.put(it.name, it)]
+		for (entry : multiMap.asMap.entrySet) {
+			val duplicates = entry.value
+			if (duplicates.size > 1) {
+				for (d : duplicates) {
+					error(
+						"Duplicate Property '" + d.name + "'",
+						d,
+						Literals.PROPERTY__NAME
+					)
+				}
+			}
+		}
+	}
+
+	@Check
+	def checkNoDuplicateComponents(Board b) {
+		val multiMap = HashMultimap.create()
+		b.components.forEach[multiMap.put(it.name, it)]
+		for (entry : multiMap.asMap.entrySet) {
+			val duplicates = entry.value
+			if (duplicates.size > 1) {
+				for (d : duplicates) {
+					error(
+						"Duplicate Component '" + d.name + "'",
+						d,
+						Literals.COMPONENT__NAME
+					)
+				}
+			}
+		}
+	}
+
+	@Check
+	def checkNoDuplicateExternalParameters(External e) {
+		checkNoDuplicateParameters(e.parameters)
+	}
+
+	@Check
+	def checkNoDuplicateInitializerParameters(ComponentInitializer c) {
+		checkNoDuplicateParameters(c.parameters)
+	}
+
+	def private void checkNoDuplicateParameters(Iterable<Parameter> parameters) {
+		val multiMap = HashMultimap.create()
+		parameters.forEach[multiMap.put(it.name, it)]
+		for (entry : multiMap.asMap.entrySet) {
+			val duplicates = entry.value
+			if (duplicates.size > 1) {
+				for (d : duplicates) {
+					error(
+						"Duplicate Parameter '" + d.name + "'",
+						d,
+						Literals.PARAMETER__NAME
+					)
+				}
+			}
+		}
+	}
+
+	@Check
+	def checkNoDuplicateBoards(Program p) {
+		checkNoDuplicateElements(p.boards, "Board")
+	}
+
+	@Check
+	def checkNoDuplicateExposes(Program p) {
+		checkNoDuplicateElements(p.exposes, "Expose")
+	}
+
+	@Check
+	def checkNoDuplicateExternals(Program p) {
+		checkNoDuplicateElements(p.externals, "External")
+	}
+
+	@Check
+	def checkNoDuplicateVariables(Program p) {
+		checkNoDuplicateElements(p.eAllOfType(VariableDeclaration), "Variable")
+	}
+
+	@Check
+	def checkNoDuplicateComponentTypes(Program p) {
+		checkNoDuplicateElements(p.componentTypes, "ComponentType")
+	}
+
+	def private void checkNoDuplicateElements(Iterable<? extends NamedProgramElement> elements, String desc) {
+		val multiMap = HashMultimap.create()
+		for (e : elements)
+			multiMap.put(e.name, e)
+		for (entry : multiMap.asMap.entrySet) {
+			val duplicates = entry.value
+			if (duplicates.size > 1) {
+				for (d : duplicates)
+					error(
+						"Duplicate " + desc + " '" + d.name + "'",
+						d,
+						Literals.NAMED_PROGRAM_ELEMENT__NAME
+					)
+			}
+		}
+	}
+
+	@Check
+	def checkStateVariableNotAssigned(Program p) {
+		for (v : p.stateVariables) {
+			if (v.exp !== null) {
+				error(
+					"A state variable can not be assigned in the declaration",
+					v,
+					Literals.VARIABLE_DECLARATION__EXP
+				)
+			}
+		}
+	}
+
+	def getPosition(ProgramElement e) {
+		val elements = e.getContainerOfType(Program).elements
+		for (var i = 0; i < elements.size; i++) {
+			if (elements.get(i) == e)
+				return i
+		}
+	}
+
 }
