@@ -76,7 +76,7 @@ class ServerGenerator implements IGenerator{
 			}
 			
 			func NewServer(externals Externals) *server {
-				«program.mqtt.generateMQTT»
+				«program.mqtts.head.generateMQTT»
 								
 				return &server{
 					externals,
@@ -144,7 +144,7 @@ class ServerGenerator implements IGenerator{
 				go s.«loopNames.get(loop)»()
 				«ENDFOR»
 				
-				http.ListenAndServe(":«program.server.port»", r)
+				http.ListenAndServe(":«program.servers.head.port»", r)
 			}
 		'''
 		

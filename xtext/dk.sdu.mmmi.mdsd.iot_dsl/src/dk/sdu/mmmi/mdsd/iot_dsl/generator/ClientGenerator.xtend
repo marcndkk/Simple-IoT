@@ -78,7 +78,7 @@ class ClientGenerator implements IGenerator{
 			self.«component.name» = components["«component.type.name»"](«FOR arg : component.args SEPARATOR ", "»«arg»«ENDFOR»)
 			«ENDFOR»
 			self.validate_components()
-			self.mqtt = MQTTClient("«board.name»", "«program.mqtt.host»", user="«program.mqtt.user»", password="«program.mqtt.pass»", port=«program.mqtt.port»)
+			self.mqtt = MQTTClient("«board.name»", "«program.mqtts.head.host»", user="«program.mqtts.head.user»", password="«program.mqtts.head.pass»", port=«program.mqtts.head.port»)
 
 		«generateComponentValidation(board)»
 
