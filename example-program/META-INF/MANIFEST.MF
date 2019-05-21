@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Automatic-Module-Name: ExampleIoT
+Bundle-ManifestVersion: 2
+Bundle-Name: ExampleIoT
+Bundle-Vendor: My Company
+Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: ExampleIoT; singleton:=true
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: pycom

@@ -1,0 +1,15 @@
+mqtt(host="<host>", user='<user>', pass="<pass>", port=1883)
+server:
+	port=8080
+board b1:
+	wifi(ssid="<ssid>", pass="<pass>")
+	led pycom_led()
+var boolean led_on
+every 5 seconds do:
+	b1.led.intensity = 70%
+	if led_on then
+		b1.led.status = "OFF"
+		led_on = false
+	else
+		b1.led.status = "ON"
+		led_on = true
