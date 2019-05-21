@@ -11,12 +11,8 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import com.google.inject.Inject
 import dk.sdu.mmmi.mdsd.iot_dsl.IoTDSLModelUtil
-import java.io.File
-import java.io.FileReader
 import static extension com.google.common.io.CharStreams.*
 import java.io.InputStreamReader
-import com.google.common.reflect.Reflection
-
 class ClientGenerator implements IGenerator{
 	
 	@Inject extension IoTDSLModelUtil
