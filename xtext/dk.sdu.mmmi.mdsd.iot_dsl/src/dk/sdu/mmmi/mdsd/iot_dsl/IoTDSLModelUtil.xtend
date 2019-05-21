@@ -9,6 +9,9 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Loop
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.External
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expose
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Server
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
 
 class IoTDSLModelUtil {
 	def getBoards(Program program) {
@@ -19,8 +22,8 @@ class IoTDSLModelUtil {
 		program.elements.filter(ComponentType)
 	}
 	
-	def getMqtt(Program program) {
-		program.elements.filter(Mqtt).get(0)
+	def getMqtts(Program program) {
+		program.elements.filter(Mqtt)
 	}
 	
 	def getStateVariables(Program program) {
@@ -39,7 +42,23 @@ class IoTDSLModelUtil {
 		program.elements.filter(Expose)
 	}
 	
-	def getServer(Program program) {
-		program.elements.filter(Server).get(0)
+	def getServers(Program program) {
+		program.elements.filter(Server)
+	}
+	
+	def getWifis(Board board) {
+		board.elements.filter(WiFi)
+	}
+	
+	def getComponents(Board board) {
+		board.elements.filter(Component)
+	}
+	
+	def numberOfSensors(Program p) {
+		val sensors = newArrayList
+		p.boards.forEach[
+			it.components.forEach[if (it.type instanceof SensorType) sensors.add(it)]
+		]
+		return sensors.size
 	}
 }
