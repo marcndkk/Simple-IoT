@@ -28,5 +28,6 @@ Export-Package: dk.sdu.mmmi.mdsd.iot_dsl,
  dk.sdu.mmmi.mdsd.iot_dsl.serializer,
  dk.sdu.mmmi.mdsd.iot_dsl.services,
  dk.sdu.mmmi.mdsd.iot_dsl.validation,
- pycom
+ pycom,
+ pycom.lib
 Import-Package: org.apache.log4j
