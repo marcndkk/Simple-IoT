@@ -9,7 +9,11 @@ Program:
 ;
 
 ProgramElement:
-	Mqtt | External | VariableDeclaration | ComponentType | Server | Board | Logic | Expose
+	Mqtt | Server | Logic | NamedProgramElement
+;
+
+NamedProgramElement:
+	External | VariableDeclaration | ComponentType | Board | Expose
 ;
 
 Mqtt:
