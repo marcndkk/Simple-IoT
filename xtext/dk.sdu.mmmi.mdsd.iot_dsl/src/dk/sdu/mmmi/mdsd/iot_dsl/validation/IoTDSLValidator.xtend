@@ -25,6 +25,9 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ProgramElement
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Loop
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Expose
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Server
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ActuatorType
 
 /**
  * This class contains custom validation rules. 
@@ -70,6 +73,40 @@ class IoTDSLValidator extends AbstractIoTDSLValidator {
 					}
 				}
 			}
+		}
+	}
+	
+	@Check
+	def checkParametersOnComponent(Component c) {
+		var int params = c.type?.initializer.parameters.size
+		if(c.args.size != params) {
+			error(
+				params + " arguments expected, " + c.args.size + " given",
+				c,
+				Literals.COMPONENT__ARGS
+			)
+		}
+	}
+	
+	@Check
+	def checkRateOnSensor(Component c) {
+		if(c.type instanceof SensorType && c.rate === null) {
+			error(
+				'''Sensor «c.name» missing sampling-rate''',
+				c,
+				Literals.COMPONENT__RATE
+			)
+		}
+	}
+	
+	@Check
+	def checkNoRateOnActuator(Component c) {
+		if(c.type instanceof ActuatorType && c.rate !== null) {
+			error(
+				'''Actuators should not have sampling-rates''',
+				c,
+				Literals.COMPONENT__RATE
+			)
 		}
 	}
 
