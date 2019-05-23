@@ -28,6 +28,8 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Server
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.ActuatorType
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Assignment
+import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.PropertyUse
 
 /**
  * This class contains custom validation rules. 
@@ -106,6 +108,17 @@ class IoTDSLValidator extends AbstractIoTDSLValidator {
 				'''Actuators should not have sampling-rates''',
 				c,
 				Literals.COMPONENT__RATE
+			)
+		}
+	}
+	
+	@Check
+	def checkNotAssigningSensors(Assignment a) {
+		if(a.ref instanceof PropertyUse && (a.ref as PropertyUse).component.type instanceof SensorType) {
+			error(
+				"You can not assign values to sensors",
+				a,
+				Literals.ASSIGNMENT__REF
 			)
 		}
 	}
