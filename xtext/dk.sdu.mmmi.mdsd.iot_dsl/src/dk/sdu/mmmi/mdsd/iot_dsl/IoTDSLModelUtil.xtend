@@ -12,6 +12,7 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Server
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.WiFi
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Component
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.SensorType
+import java.util.Set
 
 class IoTDSLModelUtil {
 	def getBoards(Program program) {
@@ -60,5 +61,25 @@ class IoTDSLModelUtil {
 			it.components.forEach[if (it.type instanceof SensorType) sensors.add(it)]
 		]
 		return sensors.size
+	}
+	
+	def getComponentsOfType(Board board, ComponentType type) {
+		var components = newArrayList
+		for(Component component : board.elements.filter(Component)) {
+			if (component.type == type) {
+				components.add(component)
+			}
+		}
+		return components
+	}
+	
+	def Set<ComponentType> getUsedComponentTypes(Program program) {
+		val types = newLinkedHashSet
+		program.boards.forEach[
+			elements.filter(Component).forEach[
+				types.add(type)
+			]
+		]
+		return types
 	}
 }

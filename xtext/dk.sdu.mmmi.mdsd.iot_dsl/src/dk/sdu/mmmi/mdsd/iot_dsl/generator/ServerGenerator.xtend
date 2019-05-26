@@ -32,7 +32,6 @@ import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.Text
 import dk.sdu.mmmi.mdsd.iot_dsl.ioTDSL.VariableDeclaration
 import java.util.List
 import java.util.Map
-import java.util.Set
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
@@ -298,16 +297,6 @@ class ServerGenerator implements IGenerator{
 			
 			return list
 		}
-	
-		def getComponentsOfType(Board board, ComponentType type) {
-			var components = newArrayList
-			for(Component component : board.elements.filter(Component)) {
-				if (component.type == type) {
-					components.add(component)
-				}
-			}
-			return components
-		}
 		
 		def CharSequence generateExpose(Expose expose) '''
 			func (s *server) «expose.name»(w http.ResponseWriter, r *http.Request) {
@@ -340,16 +329,6 @@ class ServerGenerator implements IGenerator{
 				case "float": "float64"
 				case "boolean": "bool"
 			}
-		}
-		
-		def Set<ComponentType> getUsedComponentTypes(Program program) {
-			val types = newLinkedHashSet
-			program.boards.forEach[
-				elements.filter(Component).forEach[
-					types.add(type)
-				]
-			]
-			return types
 		}
 	
 }
